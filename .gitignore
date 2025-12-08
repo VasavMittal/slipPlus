@@ -1,0 +1,17 @@
+# IDE
+.vscode
+.idea
+
+# Gradle cache
+.gradle
+build/
+
+# Runtime and exe outputs
+runtime/
+myExe/
+runtime-jmods/
+dist/
+sub_slips.json
+parties.json
+# DO NOT ignore gradle wrapper
+# DO NOT ignore build.gradle/settings.gradle

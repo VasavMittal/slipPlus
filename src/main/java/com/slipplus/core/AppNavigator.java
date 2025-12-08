@@ -1,0 +1,29 @@
+package com.slipplus.core;
+
+import javafx.stage.Stage;
+import com.slipplus.screens.menu.MenuScreen;
+import com.slipplus.screens.subSlip.SubSlipScreen;
+
+public class AppNavigator {
+
+    public static void startApp(Stage stage) {
+        new MenuScreen().start(stage);
+    }
+
+    public static void openNewSubSlip(Stage stage) {
+        System.out.println("Opening new sub slip");
+        new SubSlipScreen().start(stage);
+    }
+
+    public static void openSubSlip(Stage stage) {
+        // TODO: new SubSlipScreen().start(stage);
+    }
+
+    public static void openMainSlip(Stage stage) {
+        // TODO: new MainSlipScreen().start(stage);
+    }
+
+    public static void openPurchaseBook(Stage stage) {
+        // TODO: new PurchaseBookScreen().start(stage);
+    }
+}
