@@ -49,7 +49,7 @@ public class PartyOverlay {
         root.setStyle("-fx-background-color: " + toHex(Colors.POPUP_BG) + ";");
         root.setCenter(table);
 
-        Label footer = new Label("F1 = Add   ENTER = Edit   DEL = Delete   F2 = Save   ESC = Close");
+        Label footer = new Label("F1 = Add   ENTER = Edit   DEL = Delete   ESC = Close");
         footer.setStyle("-fx-font-size: 18px; -fx-text-fill: black;");
         footer.setAlignment(Pos.CENTER);
         root.setBottom(footer);
@@ -75,8 +75,7 @@ public class PartyOverlay {
             case F1, INSERT -> addParty();
             case ENTER -> editParty();
             case DELETE -> deleteParty();
-            case F2 -> StorageManager.saveParties(parties);
-            case ESCAPE -> ((Stage) table.getScene().getWindow()).close(); // Close popup only
+            case ESCAPE -> ((Stage) table.getScene().getWindow()).close();
             default -> {}
         }
     }
@@ -140,8 +139,46 @@ public class PartyOverlay {
     private void deleteParty() {
         Party selected = table.getSelectionModel().getSelectedItem();
         if (selected == null) return;
-        parties.remove(selected);   // DELETE ONLY SELECTED
-        table.refresh();
+        
+        // Check if party has sub-slip records
+        if (hasSubSlipRecords(selected.getId())) {
+            Alert alert = new Alert(Alert.AlertType.WARNING);
+            alert.initOwner(table.getScene().getWindow());
+            alert.initModality(Modality.WINDOW_MODAL);
+            alert.setTitle("Cannot Delete Party");
+            alert.setHeaderText(null);
+            alert.setContentText("Cannot delete party '" + selected.getName() + "'.\n\n" +
+                    "This party has sub-slip records. Please delete all sub-slip records for this party first.");
+            alert.showAndWait();
+            return;
+        }
+        
+        // Confirm deletion
+        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+        confirm.initOwner(table.getScene().getWindow());
+        confirm.initModality(Modality.WINDOW_MODAL);
+        confirm.setTitle("Confirm Delete");
+        confirm.setHeaderText(null);
+        confirm.setContentText("Are you sure you want to delete party '" + selected.getName() + "'?");
+        
+        confirm.showAndWait().ifPresent(response -> {
+            if (response == ButtonType.OK) {
+                parties.remove(selected);
+                StorageManager.saveParties(parties);
+                table.refresh();
+                table.requestFocus();
+            }
+        });
+    }
+
+    private boolean hasSubSlipRecords(int partyId) {
+        try {
+            // Check if this party ID exists in any sub-slip records
+            return StorageManager.hasSubSlipRecordsForParty(String.valueOf(partyId));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return true; // Err on the side of caution
+        }
     }
 
     private String toHex(javafx.scene.paint.Color c) {

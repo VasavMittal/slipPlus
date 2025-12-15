@@ -4,11 +4,13 @@ import com.slipplus.constants.Colors;
 import com.slipplus.core.AppNavigator;
 import com.slipplus.core.AutoScaleManager;
 import com.slipplus.constants.FontSizes;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.Label;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
@@ -41,7 +43,7 @@ public class MenuScreen {
 
         for (int i = 0; i < labels.length; i++) {
             Button btn = new Button(labels[i]);
-            btn.setPrefWidth(AutoScaleManager.scaleWidth(260));
+            btn.setPrefWidth(AutoScaleManager.scaleWidth(300)); // Increased from 260 to 300
             btn.setPrefHeight(AutoScaleManager.scaleHeight(100));
             btn.setFocusTraversable(false);
             btn.setStyle(buttonStyleNormal());
@@ -51,8 +53,18 @@ public class MenuScreen {
 
         highlight();
 
+        // Add keyboard shortcuts info at top
+        Label keyboardHelp = new Label("LEFT/RIGHT = Navigate   ENTER = Select   ESC = Exit   F1 = Party Management   F3 = Shortcuts");
+        keyboardHelp.setStyle("-fx-font-size: " + (fontSize * 0.6) + "px; -fx-text-fill: #333333; -fx-font-weight: bold; -fx-background-color: rgba(255,255,255,0.8); -fx-padding: 10px; -fx-background-radius: 5px;");
+        keyboardHelp.setAlignment(Pos.CENTER);
+        
         Scene scene = new Scene(root, screenWidth, screenHeight);
-        root.getChildren().add(container);
+        root.getChildren().addAll(keyboardHelp, container);
+        
+        // Position elements
+        StackPane.setAlignment(keyboardHelp, Pos.TOP_CENTER);
+        StackPane.setAlignment(container, Pos.CENTER);
+        StackPane.setMargin(keyboardHelp, new Insets(30, 0, 0, 0));
 
         scene.setOnKeyPressed(e -> {
             KeyCode code = e.getCode();
@@ -62,6 +74,7 @@ public class MenuScreen {
                 case ENTER -> openSelected(stage);
                 case ESCAPE -> confirmExit(stage);
                 case F1 -> new PartyOverlay().open(stage);
+                case F3 -> new ShortcutOverlay().open(stage);
                 default -> {}
             }
         });
@@ -125,7 +138,7 @@ public class MenuScreen {
     private void openSelected(Stage stage) {
         switch (selectedIndex) {
             case 0 -> AppNavigator.openNewSubSlip(stage);
-            case 1 -> AppNavigator.openSubSlip(stage);
+            case 1 -> AppNavigator.openSubSlipViewer(stage);
             case 2 -> AppNavigator.openMainSlip(stage);
             case 3 -> AppNavigator.openPurchaseBook(stage);
         }

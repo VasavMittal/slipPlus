@@ -39,7 +39,7 @@ class SwBreakdownManager {
             TextField sw = ctx.swLive.get(i);
             if (sw == focused) {
                 String t = sw.getText().trim();
-                if (t.equals("0") || t.equals("0.0") || t.equals("0.00")) {
+                if (t.equals("0.0") || t.equals("0.00")) {
                     finishSubweightsFromLive(i);
                     return;
                 }
