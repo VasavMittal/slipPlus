@@ -15,12 +15,8 @@ public class AppNavigator {
         new SubSlipScreen().start(stage);
     }
 
-    public static void openSubSlip(Stage stage) {
-        // TODO: new SubSlipScreen().start(stage);
-    }
-
     public static void openMainSlip(Stage stage) {
-        // TODO: new MainSlipScreen().start(stage);
+        new com.slipplus.screens.mainSlip.MainSlipViewerScreen().start(stage);
     }
 
     public static void openPurchaseBook(Stage stage) {

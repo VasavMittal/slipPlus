@@ -13,5 +13,7 @@ runtime-jmods/
 dist/
 sub_slips.json
 parties.json
+main_slips.json
+shortcuts.json
 # DO NOT ignore gradle wrapper
 # DO NOT ignore build.gradle/settings.gradle

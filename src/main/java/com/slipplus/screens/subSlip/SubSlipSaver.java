@@ -43,6 +43,16 @@ class SubSlipSaver {
                 else qualityValues.add(0.0);
             }
 
+            // Collect calculated prices from price fields
+            List<Double> calculatedPrices = new ArrayList<>();
+            for (var pf : ctx.priceFields) {
+                if (pf != null && pf.getUserData() instanceof Double) {
+                    calculatedPrices.add((Double) pf.getUserData());
+                } else {
+                    calculatedPrices.add(0.0);
+                }
+            }
+
             String dustDiscount = (ctx.dustDiscountBox != null && ctx.dustDiscountBox.getValue() != null)
                     ? ctx.dustDiscountBox.getValue()
                     : "";
@@ -55,6 +65,7 @@ class SubSlipSaver {
                     price1,
                     price2,
                     qualityValues,
+                    calculatedPrices, // Add calculated prices
                     dustDiscount,
                     totalBeforeGst,
                     gst,

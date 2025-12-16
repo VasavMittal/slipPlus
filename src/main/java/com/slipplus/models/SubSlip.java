@@ -10,6 +10,7 @@ public class SubSlip {
     private double price1;
     private double price2;
     private List<Double> qualityValues;
+    private List<Double> calculatedPrices;
     private String dustDiscount;
     private double totalBeforeGst;
     private double gst;
@@ -24,6 +25,7 @@ public class SubSlip {
                    double price1,
                    double price2,
                    List<Double> qualityValues,
+                   List<Double> calculatedPrices,
                    String dustDiscount,
                    double totalBeforeGst,
                    double gst,
@@ -35,6 +37,7 @@ public class SubSlip {
         this.price1 = price1;
         this.price2 = price2;
         this.qualityValues = qualityValues;
+        this.calculatedPrices = calculatedPrices;
         this.dustDiscount = dustDiscount;
         this.totalBeforeGst = totalBeforeGst;
         this.gst = gst;
@@ -61,6 +64,9 @@ public class SubSlip {
 
     public List<Double> getQualityValues() { return qualityValues; }
     public void setQualityValues(List<Double> qualityValues) { this.qualityValues = qualityValues; }
+
+    public List<Double> getCalculatedPrices() { return calculatedPrices; }
+    public void setCalculatedPrices(List<Double> calculatedPrices) { this.calculatedPrices = calculatedPrices; }
 
     public String getDustDiscount() { return dustDiscount; }
     public void setDustDiscount(String dustDiscount) { this.dustDiscount = dustDiscount; }

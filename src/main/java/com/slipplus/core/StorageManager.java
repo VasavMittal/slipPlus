@@ -2,6 +2,7 @@ package com.slipplus.core;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.slipplus.models.Party;
 import java.io.File;
 import java.util.ArrayList;
@@ -11,13 +12,22 @@ import java.time.LocalDate;
 import java.util.Map;
 import java.util.HashMap;
 import com.slipplus.models.Shortcut;
+import com.slipplus.models.MainSlip;
 
 public class StorageManager {
 
     private static final String PARTY_PATH = "src/main/resources/data/parties.json";
     private static final String SUB_SLIP_PATH = "src/main/resources/data/sub_slips.json";
-    private static final ObjectMapper mapper = new ObjectMapper();
+    private static final String MAIN_SLIP_PATH = "src/main/resources/data/main_slips.json";
+    private static final ObjectMapper mapper = createObjectMapper();
     private static final String DATA_DIR = "src/main/resources/data";
+
+    private static ObjectMapper createObjectMapper() {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.registerModule(new JavaTimeModule());
+        mapper.disable(com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        return mapper;
+    }
 
     public static List<Party> loadParties() {
         try {
@@ -333,6 +343,46 @@ public class StorageManager {
             if (!dataDir.mkdirs()) {
                 throw new RuntimeException("Failed to create data directory: " + DATA_DIR);
             }
+        }
+    }
+
+    public static void saveMainSlip(MainSlip mainSlip) {
+        try {
+            Map<String, Map<String, MainSlip>> data = loadMainSlips();
+            String dateKey = mainSlip.getDate().toString();
+            data.putIfAbsent(dateKey, new HashMap<>());
+            data.get(dateKey).put(mainSlip.getPartyName(), mainSlip);
+            
+            mapper.writerWithDefaultPrettyPrinter().writeValue(new File(MAIN_SLIP_PATH), data);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static Map<String, Map<String, MainSlip>> loadMainSlips() {
+        try {
+            File file = new File(MAIN_SLIP_PATH);
+            if (!file.exists()) return new HashMap<>();
+            return mapper.readValue(file, new TypeReference<>() {});
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new HashMap<>();
+        }
+    }
+
+    public static MainSlip getMainSlip(LocalDate date, String partyName) {
+        try {
+            Map<String, Map<String, MainSlip>> data = loadMainSlips();
+            String dateKey = date.toString();
+            Map<String, MainSlip> byParty = data.get(dateKey);
+            
+            if (byParty != null) {
+                return byParty.get(partyName);
+            }
+            return null;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
         }
     }
 }
