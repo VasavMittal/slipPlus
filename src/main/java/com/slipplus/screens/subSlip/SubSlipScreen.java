@@ -53,6 +53,10 @@ public class SubSlipScreen {
                 AppNavigator.startApp(stage);
                 return;
             }
+            if (e.getCode() == KeyCode.F2) {
+                resetAll();
+                return;
+            }
             if (e.getCode() == KeyCode.ENTER) {
                 handleEnter(stage);
                 e.consume();
@@ -60,9 +64,15 @@ public class SubSlipScreen {
         });
 
         stage.setScene(scene);
-        stage.setMaximized(true); // Use maximized instead of fullscreen
+        stage.setMaximized(true); // Ensure maximized
         stage.show();
-        Platform.runLater(() -> ctx.partyField.requestFocus());
+        
+        // Force proper maximization after show
+        Platform.runLater(() -> {
+            stage.setMaximized(false);
+            stage.setMaximized(true);
+            ctx.partyField.requestFocus();
+        });
     }
 
     // ---------- UI building ----------
@@ -83,9 +93,18 @@ public class SubSlipScreen {
         right.setAlignment(Pos.TOP_RIGHT);
         right.setPadding(new Insets(20, 24, 0, 0));
 
-        ctx.overlay.getChildren().addAll(center, right);
+        // Instructions label - positioned at top left without affecting layout
+        Label instructionsLabel = new Label("ESC = Main Menu   F2 = Reset");
+        instructionsLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: #333333; -fx-font-weight: bold; -fx-background-color: rgba(255,255,255,0.8); -fx-padding: 10px; -fx-background-radius: 5px;");
+        
+        HBox left = new HBox(instructionsLabel);
+        left.setAlignment(Pos.BOTTOM_LEFT);
+        left.setPadding(new Insets(20, 0, 0, 24));
+
+        ctx.overlay.getChildren().addAll(center, right, left);
         StackPane.setAlignment(center, Pos.TOP_CENTER);
         StackPane.setAlignment(right, Pos.TOP_RIGHT);
+        StackPane.setAlignment(left, Pos.BOTTOM_LEFT);
     }
 
 

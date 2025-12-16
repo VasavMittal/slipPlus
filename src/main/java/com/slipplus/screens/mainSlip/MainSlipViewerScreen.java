@@ -15,6 +15,16 @@ public class MainSlipViewerScreen {
     
     private Stage stage;
     private PopupStack popupStack;
+    private MainSlipScreen originalMainSlipScreen; // Add reference to original screen
+    
+    // Add constructor that accepts original screen
+    public MainSlipViewerScreen(MainSlipScreen originalScreen) {
+        this.originalMainSlipScreen = originalScreen;
+    }
+    
+    public MainSlipViewerScreen() {
+        this.originalMainSlipScreen = null;
+    }
     
     public void start(Stage stage) {
         this.stage = stage;
@@ -60,7 +70,30 @@ public class MainSlipViewerScreen {
         } else {
             // Multiple parties, show party selection
             PartySelectionPopup partyPopup = new PartySelectionPopup(stage, selectedDate, 
-                this::onPartySelected, this::onBackToDate);
+                this::onPartySelected, 
+                () -> {
+                    // When ESC is pressed in party popup
+                    popupStack.pop(); // Remove party popup
+                    
+                    // If we came from MainSlipScreen (F2), go back to it
+                    if (originalMainSlipScreen != null) {
+                        popupStack.closeAll();
+                        originalMainSlipScreen.resetPopupFlag(); // Reset the popup flag
+                        originalMainSlipScreen.start(stage); // Return to original screen
+                        return;
+                    }
+                    
+                    // Otherwise, check if we should show date selection or exit
+                    List<LocalDate> availableDates = StorageManager.getAvailableDates();
+                    
+                    if (availableDates.size() > 1) {
+                        // Multiple dates available, show date selection
+                        showDateSelectionPopup();
+                    } else {
+                        // Only one date or no dates, go to main screen
+                        onExit();
+                    }
+                });
             popupStack.push(partyPopup);
             partyPopup.show();
         }
@@ -108,3 +141,5 @@ public class MainSlipViewerScreen {
         AppNavigator.startApp(stage);
     }
 }
+
+

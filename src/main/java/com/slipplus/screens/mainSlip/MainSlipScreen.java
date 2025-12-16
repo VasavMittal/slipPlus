@@ -40,6 +40,7 @@ public class MainSlipScreen {
     private double totalBeforeOperations;
     private double totalAfterOperations;
     private double fontSize;
+    private boolean popupOpen = false; // Add this flag
     
     public MainSlipScreen(LocalDate date, String party) {
         this.selectedDate = date;
@@ -89,6 +90,11 @@ public class MainSlipScreen {
         
         Scene scene = new Scene(root, 1600, 900);
         scene.setOnKeyPressed(e -> {
+            // Don't handle keys if popup is open
+            if (popupOpen) {
+                return;
+            }
+            
             if (e.getCode() == KeyCode.ESCAPE) {
                 AppNavigator.startApp(stage);
             } else if (e.getCode() == KeyCode.F2) {
@@ -320,10 +326,19 @@ public class MainSlipScreen {
     }
 
     private void changeDate() {
+        // Set popup flag when going to date selection
+        popupOpen = true;
+        
         // Go back to MainSlipViewerScreen which will show date selection
+        // Pass reference to this screen so it can return properly
         com.slipplus.screens.mainSlip.MainSlipViewerScreen viewerScreen = 
-            new com.slipplus.screens.mainSlip.MainSlipViewerScreen();
+            new com.slipplus.screens.mainSlip.MainSlipViewerScreen(this);
         viewerScreen.start(stage);
+    }
+
+    // Add method to reset popup flag
+    public void resetPopupFlag() {
+        popupOpen = false;
     }
 
     private void changeParty() {
@@ -341,15 +356,22 @@ public class MainSlipScreen {
             return;
         }
         
+        // Set popup flag
+        popupOpen = true;
+        
         // Multiple parties available, show party selection
         com.slipplus.screens.subSlipViewer.PartySelectionPopup partyPopup = 
             new com.slipplus.screens.subSlipViewer.PartySelectionPopup(stage, selectedDate,
                 (date, partyName) -> {
+                    // Reset popup flag
+                    popupOpen = false;
                     // Create new MainSlipScreen with selected party
                     MainSlipScreen newMainSlip = new MainSlipScreen(date, partyName);
                     newMainSlip.start(stage);
                 },
                 () -> {
+                    // Reset popup flag when back is pressed
+                    popupOpen = false;
                     // If back is pressed, stay on current screen (do nothing)
                     // Focus will return to the operation field
                     Platform.runLater(() -> {
