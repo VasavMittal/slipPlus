@@ -113,7 +113,11 @@ public class MainSlipScreen {
         stage.setMaximized(true);
         stage.show();
         
-        Platform.runLater(() -> currentOperationField.requestFocus());
+        Platform.runLater(() -> {
+            if (currentOperationField != null) {
+                currentOperationField.requestFocus();
+            }
+        });
     }
     
     private void buildPartyHeader() {
@@ -307,11 +311,9 @@ public class MainSlipScreen {
         
         StorageManager.saveMainSlip(mainSlip);
         
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Success");
-        alert.setHeaderText(null);
-        alert.setContentText("Main Slip saved successfully!");
-        alert.showAndWait();
+        // Open print preview instead of just showing success message
+        MainSlipPrintPreview printPreview = new MainSlipPrintPreview(this, selectedDate, selectedParty, mainSlip);
+        printPreview.start(stage);
     }
     
     
