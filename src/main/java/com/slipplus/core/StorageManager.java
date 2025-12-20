@@ -279,13 +279,7 @@ public class StorageManager {
         try {
             File file = new File(DATA_DIR, "shortcuts.json");
             if (!file.exists()) {
-                // Create default shortcuts
-                List<Shortcut> defaults = new ArrayList<>();
-                defaults.add(new Shortcut("r", "RTGS", "+"));
-                defaults.add(new Shortcut("c", "Cash Discount", "-"));
-                defaults.add(new Shortcut("t", "Transport", "-"));
-                saveShortcuts(defaults);
-                return defaults;
+                return new ArrayList<>();
             }
 
             return mapper.readValue(file, new TypeReference<List<Shortcut>>() {});
@@ -351,6 +345,21 @@ public class StorageManager {
         } catch (Exception e) {
             e.printStackTrace();
             return null;
+        }
+    }
+
+    public static Map<String, List<SubSlip>> getSubSlipsGroupedByParty(LocalDate date) {
+        try {
+            Map<String, Map<String, List<SubSlip>>> data = loadSubSlips();
+            String dateKey = date.toString();
+            Map<String, List<SubSlip>> byParty = data.get(dateKey);
+            
+            if (byParty == null) return new HashMap<>();
+            
+            return new HashMap<>(byParty);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new HashMap<>();
         }
     }
 }

@@ -19,7 +19,7 @@ public class AppNavigator {
     }
 
     public static void openPurchaseBook(Stage stage) {
-        // TODO: new PurchaseBookScreen().start(stage);
+        new com.slipplus.screens.purchaseBook.PurchaseBookScreen().start(stage);
     }
 
     public static void openSubSlipViewer(Stage stage) {

@@ -51,10 +51,19 @@ public class MainSlipScreen {
         // Check if main slip already exists
         MainSlip existingMainSlip = StorageManager.getMainSlip(date, party);
         if (existingMainSlip != null) {
-            // Load existing operations
+            // Load existing operations but recalculate totals with current sub-slips
             this.operations = new ArrayList<>(existingMainSlip.getOperations());
-            this.totalBeforeOperations = existingMainSlip.getTotalBeforeOperations();
-            this.totalAfterOperations = existingMainSlip.getTotalAfterOperations();
+            
+            // Recalculate initial total from current sub-slips
+            calculateInitialTotal();
+            
+            // Recalculate final total with existing operations
+            calculateFinalTotal();
+            
+            // Update the stored main slip with new totals
+            MainSlip updatedMainSlip = new MainSlip(date, party, 
+                totalBeforeOperations, new ArrayList<>(operations), totalAfterOperations);
+            StorageManager.saveMainSlip(updatedMainSlip);
         } else {
             // New main slip
             this.operations = new ArrayList<>();

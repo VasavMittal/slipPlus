@@ -28,7 +28,6 @@ public class ShortcutOverlay {
     private TableView<Shortcut> table;
 
     public void open(Stage parentStage) {
-
         double screenWidth = Screen.getPrimary().getBounds().getWidth();
         double screenHeight = Screen.getPrimary().getBounds().getHeight();
 
@@ -43,13 +42,17 @@ public class ShortcutOverlay {
 
         TableColumn<Shortcut, String> colDescription = new TableColumn<>("Description");
         colDescription.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().getDescription()));
-        colDescription.setPrefWidth(400);
+        colDescription.setPrefWidth(300);
 
         TableColumn<Shortcut, String> colOperation = new TableColumn<>("Operation");
         colOperation.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().getOperation()));
-        colOperation.setPrefWidth(120);
+        colOperation.setPrefWidth(100);
 
-        table.getColumns().addAll(colAlphabet, colDescription, colOperation);
+        TableColumn<Shortcut, String> colPurchaseBook = new TableColumn<>("Show in Purchase Book");
+        colPurchaseBook.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().isShowInPurchaseBook() ? "Yes" : "No"));
+        colPurchaseBook.setPrefWidth(180);
+
+        table.getColumns().addAll(colAlphabet, colDescription, colOperation, colPurchaseBook);
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
 
         BorderPane root = new BorderPane();
@@ -143,6 +146,7 @@ public class ShortcutOverlay {
             selected.setAlphabet(editedShortcut.getAlphabet());
             selected.setDescription(editedShortcut.getDescription());
             selected.setOperation(editedShortcut.getOperation());
+            selected.setShowInPurchaseBook(editedShortcut.isShowInPurchaseBook());
 
             StorageManager.saveShortcuts(shortcuts);
             table.refresh();
@@ -195,31 +199,8 @@ public class ShortcutOverlay {
         operationBox.getItems().addAll("+", "-");
         operationBox.setValue(existing != null ? existing.getOperation() : "+");
 
-        // Add Enter key navigation
-        alphabetField.setOnKeyPressed(e -> {
-            if (e.getCode() == KeyCode.ENTER) {
-                descriptionField.requestFocus();
-                e.consume();
-            }
-        });
-
-        descriptionField.setOnKeyPressed(e -> {
-            if (e.getCode() == KeyCode.ENTER) {
-                operationBox.requestFocus();
-                e.consume();
-            }
-        });
-
-        operationBox.setOnKeyPressed(e -> {
-            if (e.getCode() == KeyCode.ENTER) {
-                // Trigger save button
-                Button saveBtn = (Button) dialog.getDialogPane().lookupButton(ButtonType.OK);
-                if (saveBtn != null) {
-                    saveBtn.fire();
-                }
-                e.consume();
-            }
-        });
+        CheckBox purchaseBookCheckBox = new CheckBox();
+        if (existing != null) purchaseBookCheckBox.setSelected(existing.isShowInPurchaseBook());
 
         grid.add(new Label("Alphabet:"), 0, 0);
         grid.add(alphabetField, 1, 0);
@@ -227,50 +208,46 @@ public class ShortcutOverlay {
         grid.add(descriptionField, 1, 1);
         grid.add(new Label("Operation:"), 0, 2);
         grid.add(operationBox, 1, 2);
+        grid.add(new Label("Show in Purchase Book:"), 0, 3);
+        grid.add(purchaseBookCheckBox, 1, 3);
 
         dialog.getDialogPane().setContent(grid);
 
         ButtonType saveButton = new ButtonType("Save", ButtonBar.ButtonData.OK_DONE);
-        ButtonType cancelButton = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
-        dialog.getDialogPane().getButtonTypes().addAll(saveButton, cancelButton);
+        dialog.getDialogPane().getButtonTypes().addAll(saveButton, ButtonType.CANCEL);
 
-        // Set initial focus to alphabet field
         Platform.runLater(() -> alphabetField.requestFocus());
 
         dialog.setResultConverter(dialogButton -> {
             if (dialogButton == saveButton) {
-                try {
-                    String alphabet = alphabetField.getText().trim(); // Keep case-sensitive
-                    String description = descriptionField.getText().trim();
-                    String operation = operationBox.getValue();
+                String alphabet = alphabetField.getText().trim();
+                String description = descriptionField.getText().trim();
+                String operation = operationBox.getValue();
+                boolean showInPurchaseBook = purchaseBookCheckBox.isSelected();
 
-                    if (alphabet.isEmpty() || description.isEmpty()) {
+                if (alphabet.isEmpty() || description.isEmpty()) {
+                    Platform.runLater(() -> {
                         Alert alert = new Alert(Alert.AlertType.WARNING);
                         alert.setTitle("Invalid Input");
                         alert.setHeaderText(null);
                         alert.setContentText("Alphabet and Description cannot be empty!");
                         alert.showAndWait();
-                        return null;
-                    }
+                    });
+                    return null;
+                }
 
-                    if (alphabet.length() != 1 || !Character.isLetter(alphabet.charAt(0))) {
+                if (alphabet.length() != 1 || !Character.isLetter(alphabet.charAt(0))) {
+                    Platform.runLater(() -> {
                         Alert alert = new Alert(Alert.AlertType.WARNING);
                         alert.setTitle("Invalid Alphabet");
                         alert.setHeaderText(null);
                         alert.setContentText("Alphabet must be a single letter!");
                         alert.showAndWait();
-                        return null;
-                    }
-
-                    return new Shortcut(alphabet, description, operation);
-                } catch (Exception e) {
-                    Alert alert = new Alert(Alert.AlertType.WARNING);
-                    alert.setTitle("Error");
-                    alert.setHeaderText(null);
-                    alert.setContentText("Please check your input!");
-                    alert.showAndWait();
+                    });
                     return null;
                 }
+
+                return new Shortcut(alphabet, description, operation, showInPurchaseBook);
             }
             return null;
         });
@@ -285,6 +262,9 @@ public class ShortcutOverlay {
                 (int) (c.getBlue() * 255));
     }
 }
+
+
+
 
 
 

@@ -518,34 +518,75 @@ public class MainSlipPrintPreview {
         // Add main slip content first
         currentY = addMainSlipContent(currentCS, font, pageW, currentY);
         
-        // Add each sub-slip to the same page if space allows
+        // Add each sub-slip individually, checking space for each one
         for (int i = 0; i < subSlips.size(); i++) {
             SubSlip subSlip = subSlips.get(i);
             
-            // Estimate space needed for sub-slip (approximately 250 points)
-            float subSlipHeight = 250f;
+            // Calculate space needed for this specific sub-slip (reduced estimate)
+            float subSlipHeight = calculateSubSlipHeight(subSlip);
             
-            // Check if we need a new page
-            if (currentY < subSlipHeight + 50f) {
+            // Check if THIS sub-slip fits on current page (reduced margin)
+            if (currentY < subSlipHeight + 30f) {
                 // Close current content stream
                 currentCS.close();
                 
-                // Create new page
+                // Create new page for this sub-slip
                 currentPage = new PDPage(PDRectangle.A4);
                 doc.addPage(currentPage);
                 currentCS = new PDPageContentStream(doc, currentPage);
                 currentY = pageH - 56.69f;
             }
             
-            // Add sub-slip content
+            // Add this sub-slip to current page
             currentY = addSubSlipContent(currentCS, font, subSlip, pageW, currentY);
-            currentY -= 30f; // Reduced space between sub-slips
+            currentY -= 15f; // Reduced space after sub-slip
         }
         
         // Close final content stream
         currentCS.close();
         
         return doc;
+    }
+
+    private float calculateSubSlipHeight(SubSlip subSlip) {
+        float height = 0f; // Remove base spacing
+        
+        // Top line (price1, party, truck)
+        height += 18f;
+        
+        // Price2 line
+        height += 18f;
+        
+        // Horizontal line
+        height += 8f; // Reduced
+        
+        // Main calculation line
+        height += 18f;
+        
+        // Additional calculation lines based on subWeights size
+        if (subSlip.getSubWeights().size() > 1) {
+            height += 18f;
+        }
+        if (subSlip.getSubWeights().size() > 2) {
+            height += 18f;
+        }
+        
+        // Bottom horizontal line
+        height += 8f; // Reduced
+        
+        // Total before GST
+        height += 20f;
+        
+        // GST line
+        height += 18f;
+        
+        // Final horizontal line
+        height += 8f; // Reduced
+        
+        // Final amount
+        height += 25f;
+        
+        return height; // Total: ~130-165f instead of ~200f
     }
 
     private float addMainSlipContent(PDPageContentStream cs, PDType1Font font, float pageW, float startY) throws Exception {
@@ -803,6 +844,9 @@ public class MainSlipPrintPreview {
         parentScreen.start(stage);
     }
 }
+
+
+
 
 
 

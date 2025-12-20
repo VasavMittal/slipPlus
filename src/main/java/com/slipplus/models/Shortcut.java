@@ -4,6 +4,7 @@ public class Shortcut {
     private String alphabet;
     private String description;
     private String operation; // "+" or "-"
+    private boolean showInPurchaseBook;
 
     public Shortcut() {}
 
@@ -11,6 +12,14 @@ public class Shortcut {
         this.alphabet = alphabet;
         this.description = description;
         this.operation = operation;
+        this.showInPurchaseBook = false; // Default to false
+    }
+
+    public Shortcut(String alphabet, String description, String operation, boolean showInPurchaseBook) {
+        this.alphabet = alphabet;
+        this.description = description;
+        this.operation = operation;
+        this.showInPurchaseBook = showInPurchaseBook;
     }
 
     // Getters and setters
@@ -23,8 +32,12 @@ public class Shortcut {
     public String getOperation() { return operation; }
     public void setOperation(String operation) { this.operation = operation; }
 
+    public boolean isShowInPurchaseBook() { return showInPurchaseBook; }
+    public void setShowInPurchaseBook(boolean showInPurchaseBook) { this.showInPurchaseBook = showInPurchaseBook; }
+
     @Override
     public String toString() {
         return alphabet + " - " + description + " (" + operation + ")";
     }
 }
+
