@@ -87,21 +87,17 @@ public class DateSelectionPopup implements BasePopup {
         
         // Add event filter to intercept keys BEFORE ListView processes them
         scene.addEventFilter(javafx.scene.input.KeyEvent.KEY_PRESSED, e -> {
-            System.out.println("Key filter: " + e.getCode());
             switch (e.getCode()) {
                 case ENTER -> {
-                    System.out.println("Enter intercepted");
                     selectDate();
                     e.consume();
                 }
                 case ESCAPE -> {
-                    System.out.println("Escape intercepted");
                     close();
                     onExit.run();
                     e.consume();
                 }
                 case F4 -> {
-                    System.out.println("F4 intercepted");
                     close();
                     onExit.run();
                     e.consume();
@@ -117,17 +113,14 @@ public class DateSelectionPopup implements BasePopup {
             Platform.runLater(() -> {
                 dateList.requestFocus();
                 dateList.getSelectionModel().selectFirst();
-                System.out.println("Popup shown, focus set");
             });
         });
     }
     
     private void selectDate() {
         int selectedIndex = dateList.getSelectionModel().getSelectedIndex();
-        System.out.println("selectDate called, selectedIndex: " + selectedIndex);
         if (selectedIndex >= 0 && selectedIndex < availableDates.size()) {
             LocalDate selectedDate = availableDates.get(selectedIndex);
-            System.out.println("Selected date: " + selectedDate);
             close();
             onDateSelected.accept(selectedDate);
         }

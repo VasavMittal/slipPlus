@@ -24,7 +24,6 @@ public class SubSlipScreen {
 
     public void start(Stage stage) {
 
-        System.out.println("SubSlipScreen.start()");
 
         ctx.root = new BorderPane();
         ctx.root.setStyle("-fx-background-color: white;");

@@ -11,7 +11,6 @@ public class AppNavigator {
     }
 
     public static void openNewSubSlip(Stage stage) {
-        System.out.println("Opening new sub slip");
         new SubSlipScreen().start(stage);
     }
 

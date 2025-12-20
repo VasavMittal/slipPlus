@@ -139,11 +139,24 @@ public class MainSlipPrintPreview {
             subSlipTotal += slip.getFinalAmount();
         }
         
+        // Line above sub-slip total
+        Label lineAboveSubTotal = new Label("─────────────────────────────────────");
+        lineAboveSubTotal.setStyle(String.format("-fx-font-size: %.0fpx;", fontSize * 0.8));
+        lineAboveSubTotal.setAlignment(Pos.CENTER);
+        subSlipSummary.getChildren().add(lineAboveSubTotal);
+        
         // Sub-slip total (centered, no label)
         Label subTotalLabel = new Label("₹" + moneyFmt.format(subSlipTotal));
         subTotalLabel.setStyle(String.format("-fx-font-size: %.0fpx; -fx-font-weight: bold;", fontSize));
         subTotalLabel.setAlignment(Pos.CENTER);
         subSlipSummary.getChildren().add(subTotalLabel);
+        
+        // Line below sub-slip total
+        Label lineBelowSubTotal = new Label("─────────────────────────────────────");
+        lineBelowSubTotal.setStyle(String.format("-fx-font-size: %.0fpx;", fontSize * 0.8));
+        lineBelowSubTotal.setAlignment(Pos.CENTER);
+        subSlipSummary.getChildren().add(lineBelowSubTotal);
+        
         content.getChildren().add(subSlipSummary);
         
         // Operations (centered, no "OPERATIONS:" label)
@@ -167,19 +180,26 @@ public class MainSlipPrintPreview {
                 }
             }
             
-            // Operations total (centered, no label)
-            Label opTotalLabel = new Label("₹" + moneyFmt.format(operationsTotal));
-            opTotalLabel.setStyle(String.format("-fx-font-size: %.0fpx; -fx-font-weight: bold;", fontSize));
-            opTotalLabel.setAlignment(Pos.CENTER);
-            operationsBox.getChildren().add(opTotalLabel);
             content.getChildren().add(operationsBox);
         }
+        
+        // Line above final amount
+        Label lineAboveFinal = new Label("═════════════════════════════════════");
+        lineAboveFinal.setStyle(String.format("-fx-font-size: %.0fpx;", fontSize * 0.8));
+        lineAboveFinal.setAlignment(Pos.CENTER);
+        content.getChildren().add(lineAboveFinal);
         
         // Final Amount (centered, no label)
         Label finalLabel = new Label("₹" + moneyFmt.format(mainSlip.getTotalAfterOperations()));
         finalLabel.setStyle(String.format("-fx-font-size: %.0fpx; -fx-font-weight: bold; -fx-text-fill: green;", fontSize * 1.3));
         finalLabel.setAlignment(Pos.CENTER);
         content.getChildren().add(finalLabel);
+        
+        // Line below final amount
+        Label lineBelowFinal = new Label("═════════════════════════════════════");
+        lineBelowFinal.setStyle(String.format("-fx-font-size: %.0fpx;", fontSize * 0.8));
+        lineBelowFinal.setAlignment(Pos.CENTER);
+        content.getChildren().add(lineBelowFinal);
         
         // Separator
         Label separator = new Label("─────────────────────────────────────");
@@ -546,46 +566,62 @@ public class MainSlipPrintPreview {
         cs.newLineAtOffset((pageW - partyWidth) / 2f, y);
         cs.showText(partyText);
         cs.endText();
-        y -= 25f; // Reduced spacing
+        y -= 30f;
         
         // Sub-slip data (centered)
         cs.setFont(font, 12f);
         double subSlipTotal = 0;
         for (SubSlip slip : subSlips) {
-            String summaryText = String.format("%.0f -> Rs.%s", 
+            String summaryText = String.format("%.0f -> %s", 
                 slip.getMainWeight(), moneyFmt.format(slip.getFinalAmount()));
             float summaryWidth = font.getStringWidth(summaryText) / 1000f * 12f;
             cs.beginText();
             cs.newLineAtOffset((pageW - summaryWidth) / 2f, y);
             cs.showText(summaryText);
             cs.endText();
-            y -= 12f; // Reduced spacing
+            y -= 15f;
             subSlipTotal += slip.getFinalAmount();
         }
         
-        // Sub-slip total (centered)
+        // Line above sub-slip total
+        float lineWidth = 300f;
+        float lineX = (pageW - lineWidth) / 2f;
+        cs.setLineWidth(1f);
+        cs.moveTo(lineX, y);
+        cs.lineTo(lineX + lineWidth, y);
+        cs.stroke();
+        y -= 15f;
+        
+        // Sub-slip total (centered, bold)
         cs.setFont(font, 14f);
-        String subTotalText = "Rs." + moneyFmt.format(subSlipTotal);
+        String subTotalText = moneyFmt.format(subSlipTotal);
         float subTotalWidth = font.getStringWidth(subTotalText) / 1000f * 14f;
         cs.beginText();
         cs.newLineAtOffset((pageW - subTotalWidth) / 2f, y);
         cs.showText(subTotalText);
         cs.endText();
-        y -= 20f; // Reduced spacing
+        y -= 15f;
+        
+        // Line below sub-slip total
+        cs.setLineWidth(1f);
+        cs.moveTo(lineX, y);
+        cs.lineTo(lineX + lineWidth, y);
+        cs.stroke();
+        y -= 25f;
         
         // Operations (centered)
         if (!mainSlip.getOperations().isEmpty()) {
             cs.setFont(font, 12f);
             double operationsTotal = 0;
             for (MainSlip.Operation op : mainSlip.getOperations()) {
-                String opText = String.format("Rs.%s %s (%s)", 
+                String opText = String.format("%s %s (%s)", 
                     moneyFmt.format(op.getAmount()), op.getDescription(), op.getOperationType());
                 float opWidth = font.getStringWidth(opText) / 1000f * 12f;
                 cs.beginText();
                 cs.newLineAtOffset((pageW - opWidth) / 2f, y);
                 cs.showText(opText);
                 cs.endText();
-                y -= 12f; // Reduced spacing
+                y -= 15f;
                 
                 if ("+".equals(op.getOperationType())) {
                     operationsTotal += op.getAmount();
@@ -594,37 +630,65 @@ public class MainSlipPrintPreview {
                 }
             }
             
+            // Line above operations total
+            cs.setLineWidth(1f);
+            cs.moveTo(lineX, y);
+            cs.lineTo(lineX + lineWidth, y);
+            cs.stroke();
+            y -= 15f;
+            
             // Operations total (centered)
             cs.setFont(font, 14f);
-            String opTotalText = "Rs." + moneyFmt.format(operationsTotal);
+            String opTotalText = moneyFmt.format(operationsTotal);
             float opTotalWidth = font.getStringWidth(opTotalText) / 1000f * 14f;
             cs.beginText();
             cs.newLineAtOffset((pageW - opTotalWidth) / 2f, y);
             cs.showText(opTotalText);
             cs.endText();
-            y -= 20f; // Reduced spacing
+            y -= 15f;
+            
+            // Line below operations total
+            cs.setLineWidth(1f);
+            cs.moveTo(lineX, y);
+            cs.lineTo(lineX + lineWidth, y);
+            cs.stroke();
+            y -= 25f;
         }
         
-        // Final amount (centered)
+        // Line above final amount (thicker)
+        cs.setLineWidth(2f);
+        cs.moveTo(lineX, y);
+        cs.lineTo(lineX + lineWidth, y);
+        cs.stroke();
+        y -= 15f;
+        
+        // Final amount (centered, larger font)
         cs.setFont(font, 16f);
-        String finalText = "Rs." + moneyFmt.format(mainSlip.getTotalAfterOperations());
+        String finalText = moneyFmt.format(mainSlip.getTotalAfterOperations());
         float finalWidth = font.getStringWidth(finalText) / 1000f * 16f;
         cs.beginText();
         cs.newLineAtOffset((pageW - finalWidth) / 2f, y);
         cs.showText(finalText);
         cs.endText();
-        y -= 40f; // Space before sub-slips
+        y -= 15f;
+        
+        // Line below final amount (thicker)
+        cs.setLineWidth(2f);
+        cs.moveTo(lineX, y);
+        cs.lineTo(lineX + lineWidth, y);
+        cs.stroke();
+        y -= 50f; // More space before sub-slips
         
         return y;
     }
 
     private float addSubSlipContent(PDPageContentStream cs, PDType1Font font, SubSlip subSlip, float pageW, float startY) throws Exception {
-        float slipWidth = 300f;
+        float slipWidth = 400f;
         float leftMargin = (pageW - slipWidth) / 2f;
         float y = startY;
         
         // Top line: Price1 (left), Party name (center), Truck number (right)
-        cs.setFont(font, 14f);
+        cs.setFont(font, 12f);
         
         // Price1 (left)
         cs.beginText();
@@ -634,119 +698,130 @@ public class MainSlipPrintPreview {
         
         // Party name (centered)
         String partyText = subSlip.getPartyName();
-        float partyWidth = font.getStringWidth(partyText) / 1000f * 14f;
+        float partyWidth = font.getStringWidth(partyText) / 1000f * 12f;
         cs.beginText();
         cs.newLineAtOffset(leftMargin + (slipWidth - partyWidth) / 2f, y);
         cs.showText(partyText);
         cs.endText();
         
         // Truck number (right)
+        String truckText = subSlip.getTruckNumber();
+        float truckWidth = font.getStringWidth(truckText) / 1000f * 12f;
         cs.beginText();
-        cs.newLineAtOffset(leftMargin + slipWidth - 80f, y);
-        cs.showText(subSlip.getTruckNumber());
+        cs.newLineAtOffset(leftMargin + slipWidth - truckWidth, y);
+        cs.showText(truckText);
         cs.endText();
-        y -= 20f;
+        y -= 18f;
         
         // Price2 (left aligned, below price1)
         cs.beginText();
         cs.newLineAtOffset(leftMargin, y);
         cs.showText(String.format("%.0f", subSlip.getPrice2()));
         cs.endText();
-        y -= 20f;
+        y -= 18f;
         
         // Horizontal line
         cs.setLineWidth(1f);
         cs.moveTo(leftMargin, y);
-        cs.lineTo(leftMargin + slipWidth - 80f, y);
+        cs.lineTo(leftMargin + slipWidth, y);
         cs.stroke();
-        y -= 20f;
+        y -= 18f;
         
-        // Main calculation lines
-        cs.beginText();
-        cs.newLineAtOffset(leftMargin, y);
-        cs.showText(String.format("%.0f - %.0f × %.0f", 
+        // Main calculation line: mainWeight - subWeight × calculatedPrice
+        String calc1Text = String.format("%.0f - %.0f × %.0f", 
             subSlip.getMainWeight(), 
             subSlip.getSubWeights().get(0), 
-            subSlip.getCalculatedPrices().get(0)));
+            subSlip.getCalculatedPrices().get(0));
+        cs.beginText();
+        cs.newLineAtOffset(leftMargin, y);
+        cs.showText(calc1Text);
         cs.endText();
         
-        String qualityText = String.format("%+.0f", subSlip.getQualityValues().get(0));
+        // Quality value (right aligned)
+        String quality1Text = String.format("%+.0f", subSlip.getQualityValues().get(0));
+        float quality1Width = font.getStringWidth(quality1Text) / 1000f * 12f;
         cs.beginText();
-        cs.newLineAtOffset(leftMargin + slipWidth - 80f, y);
-        cs.showText(qualityText);
+        cs.newLineAtOffset(leftMargin + slipWidth - quality1Width, y);
+        cs.showText(quality1Text);
         cs.endText();
-        y -= 20f;
+        y -= 18f;
         
         // Additional calculation lines if needed
         if (subSlip.getSubWeights().size() > 1) {
             String mainWeightSpacing = String.format("%.0f - ", subSlip.getMainWeight());
-            float spacingWidth = font.getStringWidth(mainWeightSpacing) / 1000f * 14f;
+            float spacingWidth = font.getStringWidth(mainWeightSpacing) / 1000f * 12f;
             
+            String calc2Text = String.format("%.0f × %.0f", 
+                subSlip.getSubWeights().get(1), 
+                subSlip.getCalculatedPrices().get(1));
             cs.beginText();
             cs.newLineAtOffset(leftMargin + spacingWidth, y);
-            cs.showText(String.format("%.0f × %.0f", 
-                subSlip.getSubWeights().get(1), 
-                subSlip.getCalculatedPrices().get(1)));
+            cs.showText(calc2Text);
             cs.endText();
             
             String quality2Text = String.format("%+.0f", subSlip.getQualityValues().get(1));
+            float quality2Width = font.getStringWidth(quality2Text) / 1000f * 12f;
             cs.beginText();
-            cs.newLineAtOffset(leftMargin + slipWidth - 80f, y);
+            cs.newLineAtOffset(leftMargin + slipWidth - quality2Width, y);
             cs.showText(quality2Text);
             cs.endText();
-            y -= 20f;
+            y -= 18f;
         }
         
         if (subSlip.getSubWeights().size() > 2) {
             String mainWeightSpacing = String.format("%.0f - ", subSlip.getMainWeight());
-            float spacingWidth = font.getStringWidth(mainWeightSpacing) / 1000f * 14f;
+            float spacingWidth = font.getStringWidth(mainWeightSpacing) / 1000f * 12f;
             
+            String subWeight3Text = String.format("%.0f", subSlip.getSubWeights().get(2));
             cs.beginText();
             cs.newLineAtOffset(leftMargin + spacingWidth, y);
-            cs.showText(String.format("%.0f", subSlip.getSubWeights().get(2)));
+            cs.showText(subWeight3Text);
             cs.endText();
             
+            String dustText = subSlip.getDustDiscount();
+            float dustWidth = font.getStringWidth(dustText) / 1000f * 12f;
             cs.beginText();
-            cs.newLineAtOffset(leftMargin + slipWidth - 80f, y);
-            cs.showText(subSlip.getDustDiscount());
+            cs.newLineAtOffset(leftMargin + slipWidth - dustWidth, y);
+            cs.showText(dustText);
             cs.endText();
-            y -= 20f;
+            y -= 18f;
         }
         
-        // Bottom section
+        // Bottom horizontal line
         cs.setLineWidth(2f);
         cs.moveTo(leftMargin, y);
-        cs.lineTo(leftMargin + slipWidth - 80f, y);
+        cs.lineTo(leftMargin + slipWidth, y);
         cs.stroke();
-        y -= 25f;
+        y -= 20f;
         
         // Total before GST (centered)
-        cs.setFont(font, 16f);
+        cs.setFont(font, 14f);
         String totalText = String.format("%.0f", subSlip.getTotalBeforeGst());
-        float totalWidth = font.getStringWidth(totalText) / 1000f * 16f;
+        float totalWidth = font.getStringWidth(totalText) / 1000f * 14f;
         cs.beginText();
         cs.newLineAtOffset(leftMargin + (slipWidth - totalWidth) / 2f, y);
         cs.showText(totalText);
         cs.endText();
-        y -= 25f;
+        y -= 20f;
         
         // GST (centered)
-        cs.setFont(font, 14f);
+        cs.setFont(font, 12f);
         String gstText = String.format("%.0f", subSlip.getGst());
-        float gstWidth = font.getStringWidth(gstText) / 1000f * 14f;
+        float gstWidth = font.getStringWidth(gstText) / 1000f * 12f;
         cs.beginText();
         cs.newLineAtOffset(leftMargin + (slipWidth - gstWidth) / 2f, y);
         cs.showText(gstText);
         cs.endText();
-        y -= 20f;
+        y -= 18f;
         
-        // Final line and amount
+        // Final horizontal line
         cs.setLineWidth(2f);
         cs.moveTo(leftMargin, y);
-        cs.lineTo(leftMargin + slipWidth - 80f, y);
+        cs.lineTo(leftMargin + slipWidth, y);
         cs.stroke();
-        y -= 25f;
+        y -= 20f;
         
+        // Final amount (centered, bold)
         cs.setFont(font, 16f);
         String finalText = String.format("%.0f", subSlip.getFinalAmount());
         float finalWidth = font.getStringWidth(finalText) / 1000f * 16f;
@@ -754,7 +829,7 @@ public class MainSlipPrintPreview {
         cs.newLineAtOffset(leftMargin + (slipWidth - finalWidth) / 2f, y);
         cs.showText(finalText);
         cs.endText();
-        y -= 30f;
+        y -= 40f;
         
         return y;
     }
@@ -765,6 +840,11 @@ public class MainSlipPrintPreview {
         parentScreen.start(stage);
     }
 }
+
+
+
+
+
 
 
 
