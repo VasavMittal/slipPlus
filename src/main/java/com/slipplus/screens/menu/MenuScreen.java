@@ -3,12 +3,14 @@ package com.slipplus.screens.menu;
 import com.slipplus.constants.Colors;
 import com.slipplus.core.AppNavigator;
 import com.slipplus.core.AutoScaleManager;
+import com.slipplus.core.StorageManager;
 import com.slipplus.constants.FontSizes;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonBar.ButtonData;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
 import javafx.scene.input.KeyCode;
@@ -16,6 +18,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
+import javafx.scene.image.Image;
 
 public class MenuScreen {
 
@@ -24,6 +27,13 @@ public class MenuScreen {
     private double fontSize; // <-- Class variable so NOT a lambda problem
 
     public void start(Stage stage) {
+        // Add logo to window icon
+        try {
+            Image icon = new Image(getClass().getResourceAsStream("/logos/logo.png"));
+            stage.getIcons().add(icon);
+        } catch (Exception e) {
+            System.out.println("Could not load logo: " + e.getMessage());
+        }
 
         double screenWidth = Screen.getPrimary().getBounds().getWidth();
         double screenHeight = Screen.getPrimary().getBounds().getHeight();
@@ -88,17 +98,73 @@ public class MenuScreen {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
         alert.setTitle("Exit SlipPlus");
         alert.setHeaderText(null);
-        alert.setContentText("Are you sure you want to exit?");
+        alert.setContentText("What would you like to do?");
         alert.initOwner(stage);
 
+        // Create custom buttons
+        ButtonType exitButton = new ButtonType("Exit");
+        ButtonType deleteAllButton = new ButtonType("Delete All Data & Exit");
+        ButtonType cancelButton = new ButtonType("Cancel", ButtonData.CANCEL_CLOSE);
+
+        alert.getButtonTypes().setAll(exitButton, deleteAllButton, cancelButton);
+
         alert.showAndWait().ifPresent(result -> {
-            if (result == ButtonType.OK) {
+            if (result == exitButton) {
+                // Normal exit
                 stage.close();
                 System.exit(0);
+            } else if (result == deleteAllButton) {
+                // Delete all data and exit
+                confirmDeleteAllData(stage);
+            }
+            // Cancel - do nothing
+        });
+    }
+
+    private void confirmDeleteAllData(Stage stage) {
+        Alert confirmAlert = new Alert(Alert.AlertType.WARNING);
+        confirmAlert.setTitle("Delete All Data");
+        confirmAlert.setHeaderText("Are you sure?");
+        confirmAlert.setContentText("This will permanently delete:\n" +
+                "• All sub-slip records\n" +
+                "• All main slip records\n" +
+                "• Purchase book data\n\n" +
+                "Party data, shortcuts, and license will be preserved.\n\n" +
+                "This action cannot be undone!");
+        confirmAlert.initOwner(stage);
+
+        confirmAlert.showAndWait().ifPresent(response -> {
+            if (response == ButtonType.OK) {
+                deleteAllDataAndExit(stage);
             }
         });
     }
 
+    private void deleteAllDataAndExit(Stage stage) {
+        try {
+            // Delete data files (keep parties.json, shortcuts.json, and license)
+            StorageManager.deleteAllData();
+            
+            Alert successAlert = new Alert(Alert.AlertType.INFORMATION);
+            successAlert.setTitle("Data Deleted");
+            successAlert.setHeaderText(null);
+            successAlert.setContentText("All data has been successfully deleted.");
+            successAlert.initOwner(stage);
+            successAlert.showAndWait();
+            
+            // Exit application
+            stage.close();
+            System.exit(0);
+            
+        } catch (Exception e) {
+            Alert errorAlert = new Alert(Alert.AlertType.ERROR);
+            errorAlert.setTitle("Error");
+            errorAlert.setHeaderText(null);
+            errorAlert.setContentText("Failed to delete data: " + e.getMessage());
+            errorAlert.initOwner(stage);
+            errorAlert.showAndWait();
+        }
+    }
 
     private void moveSelection(int step) {
         selectedIndex = Math.floorMod(selectedIndex + step, buttons.length);

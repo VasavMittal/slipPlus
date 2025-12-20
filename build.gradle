@@ -40,13 +40,18 @@ application {
 }
 
 run {
-    doFirst {
-        jvmArgs = [
-                "--module-path", configurations.runtimeClasspath.asPath,
-                "--add-modules", "javafx.controls,javafx.fxml,javafx.graphics",
-                "--add-opens=javafx.graphics/javafx.scene=ALL-UNNAMED"
-        ]
-    }
+    // Cache JVM args
+    jvmArgs = [
+        "--module-path", configurations.runtimeClasspath.asPath,
+        "--add-modules", "javafx.controls,javafx.fxml,javafx.graphics",
+        "--add-opens=javafx.graphics/javafx.scene=ALL-UNNAMED"
+    ]
+}
+
+// Add this for faster builds
+tasks.withType(JavaCompile) {
+    options.incremental = true
+    options.fork = true
 }
 
 jar {
@@ -91,6 +96,13 @@ task createExeWithJmods(type: Exec) {
             "--main-jar", jar.archiveFileName.get(),
             "--main-class", mainClass,
             "--runtime-image", "runtime-jmods",
+            "--icon", "src/main/resources/logos/logo.ico",
+            "--app-version", "1.0.0",
+            "--vendor", "SlipPlus",
+            "--description", "SlipPlus Application",
+            "--win-dir-chooser",  // Let user choose install directory
+            "--win-menu",         // Add to start menu
+            "--win-shortcut",     // Create desktop shortcut
             "--java-options", "--add-opens=javafx.graphics/javafx.scene=ALL-UNNAMED",
             "--java-options", "-Dprism.order=sw",
             "--java-options", "-Dprism.verbose=true",

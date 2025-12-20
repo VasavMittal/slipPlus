@@ -15,5 +15,10 @@ sub_slips.json
 parties.json
 main_slips.json
 ./src/main/resources/data/shortcuts.json
+
+# License files
+system.lic
+*.lic
+
 # DO NOT ignore gradle wrapper
 # DO NOT ignore build.gradle/settings.gradle

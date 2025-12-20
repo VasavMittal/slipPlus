@@ -362,4 +362,36 @@ public class StorageManager {
             return new HashMap<>();
         }
     }
+
+    public static void deleteAllData() {
+        try {
+            // Delete sub-slip data
+            File subSlipFile = new File(SUB_SLIP_PATH);
+            if (subSlipFile.exists()) {
+                subSlipFile.delete();
+                System.out.println("Deleted: " + SUB_SLIP_PATH);
+            }
+            
+            // Delete main slip data
+            File mainSlipFile = new File(MAIN_SLIP_PATH);
+            if (mainSlipFile.exists()) {
+                mainSlipFile.delete();
+                System.out.println("Deleted: " + MAIN_SLIP_PATH);
+            }
+            
+            // Delete purchase book data (if exists)
+            File purchaseBookFile = new File("purchase_book.json");
+            if (purchaseBookFile.exists()) {
+                purchaseBookFile.delete();
+                System.out.println("Deleted: purchase_book.json");
+            }
+            
+            // Keep parties.json, shortcuts.json, and license files
+            System.out.println("Data deletion completed. Parties, shortcuts, and license preserved.");
+            
+        } catch (Exception e) {
+            System.err.println("Error deleting data files: " + e.getMessage());
+            throw new RuntimeException("Failed to delete data files", e);
+        }
+    }
 }
