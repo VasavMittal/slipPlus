@@ -3,6 +3,8 @@ package com.slipplus.screens.subSlip;
 import com.slipplus.core.StorageManager;
 import com.slipplus.models.SubSlip;
 
+import javafx.scene.control.TextField;
+
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -43,11 +45,18 @@ class SubSlipSaver {
                 else qualityValues.add(0.0);
             }
 
-            // Collect calculated prices from price fields
+            // Collect calculated prices from price fields (actual rates, not totals)
             List<Double> calculatedPrices = new ArrayList<>();
-            for (var pf : ctx.priceFields) {
-                if (pf != null && pf.getUserData() instanceof Double) {
-                    calculatedPrices.add((Double) pf.getUserData());
+            for (int i = 0; i < ctx.priceFields.size(); i++) {
+                TextField pf = ctx.priceFields.get(i);
+                if (pf != null && pf.isVisible()) {
+                    // Get the displayed rate (p1 + p2 + quality), not the total amount
+                    String displayedText = pf.getText();
+                    if (displayedText != null && !displayedText.trim().isEmpty()) {
+                        calculatedPrices.add(parse(displayedText.replace(",", "")));
+                    } else {
+                        calculatedPrices.add(0.0);
+                    }
                 } else {
                     calculatedPrices.add(0.0);
                 }
