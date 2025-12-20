@@ -130,8 +130,8 @@ public class MainSlipPrintPreview {
         
         double subSlipTotal = 0;
         for (SubSlip slip : subSlips) {
-            String summaryText = String.format("%.0f → ₹%s", 
-                slip.getMainWeight(), moneyFmt.format(slip.getFinalAmount()));
+            String summaryText = String.format("%.0f → %.0f", 
+                slip.getMainWeight(), slip.getFinalAmount());
             Label summaryLabel = new Label(summaryText);
             summaryLabel.setStyle(String.format("-fx-font-size: %.0fpx;", fontSize));
             summaryLabel.setAlignment(Pos.CENTER);
@@ -146,7 +146,7 @@ public class MainSlipPrintPreview {
         subSlipSummary.getChildren().add(lineAboveSubTotal);
         
         // Sub-slip total (centered, no label)
-        Label subTotalLabel = new Label("₹" + moneyFmt.format(subSlipTotal));
+        Label subTotalLabel = new Label(String.format("%.0f", subSlipTotal));
         subTotalLabel.setStyle(String.format("-fx-font-size: %.0fpx; -fx-font-weight: bold;", fontSize));
         subTotalLabel.setAlignment(Pos.CENTER);
         subSlipSummary.getChildren().add(subTotalLabel);
@@ -164,20 +164,13 @@ public class MainSlipPrintPreview {
             VBox operationsBox = new VBox(5);
             operationsBox.setAlignment(Pos.CENTER);
             
-            double operationsTotal = 0;
             for (MainSlip.Operation op : mainSlip.getOperations()) {
-                String opText = String.format("₹%s %s (%s)", 
-                    moneyFmt.format(op.getAmount()), op.getDescription(), op.getOperationType());
+                String opText = String.format("%.0f %s (%s)", 
+                    op.getAmount(), op.getDescription(), op.getOperationType());
                 Label opLabel = new Label(opText);
                 opLabel.setStyle(String.format("-fx-font-size: %.0fpx;", fontSize));
                 opLabel.setAlignment(Pos.CENTER);
                 operationsBox.getChildren().add(opLabel);
-                
-                if ("+".equals(op.getOperationType())) {
-                    operationsTotal += op.getAmount();
-                } else if ("-".equals(op.getOperationType())) {
-                    operationsTotal -= op.getAmount();
-                }
             }
             
             content.getChildren().add(operationsBox);
@@ -190,7 +183,7 @@ public class MainSlipPrintPreview {
         content.getChildren().add(lineAboveFinal);
         
         // Final Amount (centered, no label)
-        Label finalLabel = new Label("₹" + moneyFmt.format(mainSlip.getTotalAfterOperations()));
+        Label finalLabel = new Label(String.format("%.0f", mainSlip.getTotalAfterOperations()));
         finalLabel.setStyle(String.format("-fx-font-size: %.0fpx; -fx-font-weight: bold; -fx-text-fill: green;", fontSize * 1.3));
         finalLabel.setAlignment(Pos.CENTER);
         content.getChildren().add(finalLabel);
@@ -245,12 +238,12 @@ public class MainSlipPrintPreview {
         // Create the exact print format preview
         VBox slipContent = new VBox(2);
         slipContent.setAlignment(Pos.CENTER);
-        slipContent.setMaxWidth(300);
+        slipContent.setMaxWidth(250); // Reduced from 300 to match main slip width
         
         // Top line: Price1, Party name (centered), Truck number
         HBox topLine = new HBox();
         topLine.setAlignment(Pos.CENTER);
-        topLine.setPrefWidth(280);
+        topLine.setPrefWidth(230); // Reduced from 280
         
         Label price1Label = new Label(String.format("%.0f", slip.getPrice1()));
         price1Label.setStyle(String.format("-fx-font-size: %.0fpx; -fx-font-family: monospace;", fontSize * 0.8));
@@ -272,7 +265,7 @@ public class MainSlipPrintPreview {
         // Price2 (left aligned, below price1)
         HBox price2Line = new HBox();
         price2Line.setAlignment(Pos.CENTER_LEFT);
-        price2Line.setPrefWidth(280);
+        price2Line.setPrefWidth(230); // Reduced from 280
         
         Label price2Label = new Label(String.format("%.0f", slip.getPrice2()));
         price2Label.setStyle(String.format("-fx-font-size: %.0fpx; -fx-font-family: monospace;", fontSize * 0.8));
@@ -280,14 +273,14 @@ public class MainSlipPrintPreview {
         slipContent.getChildren().add(price2Line);
         
         // Horizontal line
-        Label line1 = new Label("_________________________");
+        Label line1 = new Label("____________________"); // Reduced from 25 underscores to 20
         line1.setStyle(String.format("-fx-font-size: %.0fpx; -fx-font-family: monospace;", fontSize * 0.6));
         slipContent.getChildren().add(line1);
         
         // Main calculation line: mainWeight - subWeight × calculatedPrice
         HBox calcLine1 = new HBox();
         calcLine1.setAlignment(Pos.CENTER_LEFT);
-        calcLine1.setPrefWidth(280);
+        calcLine1.setPrefWidth(230); // Reduced from 280
 
         String calc1Text = String.format("%.0f - %.0f × %.0f", 
             slip.getMainWeight(), 
@@ -310,7 +303,7 @@ public class MainSlipPrintPreview {
         if (slip.getSubWeights().size() > 1) {
             HBox calcLine2 = new HBox();
             calcLine2.setAlignment(Pos.CENTER_LEFT);
-            calcLine2.setPrefWidth(280);
+            calcLine2.setPrefWidth(230); // Reduced from 280
             
             // Calculate spacing to align under first subWeight (after "6500 - ")
             String mainWeightText = String.format("%.0f - ", slip.getMainWeight());
@@ -338,7 +331,7 @@ public class MainSlipPrintPreview {
         if (slip.getSubWeights().size() > 2) {
             HBox calcLine3 = new HBox();
             calcLine3.setAlignment(Pos.CENTER_LEFT);
-            calcLine3.setPrefWidth(280);
+            calcLine3.setPrefWidth(230); // Reduced from 280
             
             // Calculate spacing to align under first subWeight (after "6500 - ")
             String mainWeightText = String.format("%.0f - ", slip.getMainWeight());
@@ -359,7 +352,7 @@ public class MainSlipPrintPreview {
         }
         
         // Horizontal line
-        Label line2 = new Label("_________________________");
+        Label line2 = new Label("____________________"); // Reduced from 25 underscores to 20
         line2.setStyle(String.format("-fx-font-size: %.0fpx; -fx-font-family: monospace;", fontSize * 0.6));
         slipContent.getChildren().add(line2);
         
@@ -376,7 +369,7 @@ public class MainSlipPrintPreview {
         slipContent.getChildren().add(gstLabel);
         
         // Final horizontal line
-        Label line3 = new Label("_________________________");
+        Label line3 = new Label("____________________"); // Reduced from 25 underscores to 20
         line3.setStyle(String.format("-fx-font-size: %.0fpx; -fx-font-family: monospace;", fontSize * 0.6));
         slipContent.getChildren().add(line3);
         
@@ -572,8 +565,8 @@ public class MainSlipPrintPreview {
         cs.setFont(font, 12f);
         double subSlipTotal = 0;
         for (SubSlip slip : subSlips) {
-            String summaryText = String.format("%.0f -> %s", 
-                slip.getMainWeight(), moneyFmt.format(slip.getFinalAmount()));
+            String summaryText = String.format("%.0f -> %.0f", 
+                slip.getMainWeight(), slip.getFinalAmount());
             float summaryWidth = font.getStringWidth(summaryText) / 1000f * 12f;
             cs.beginText();
             cs.newLineAtOffset((pageW - summaryWidth) / 2f, y);
@@ -594,7 +587,7 @@ public class MainSlipPrintPreview {
         
         // Sub-slip total (centered, bold)
         cs.setFont(font, 14f);
-        String subTotalText = moneyFmt.format(subSlipTotal);
+        String subTotalText = String.format("%.0f", subSlipTotal);
         float subTotalWidth = font.getStringWidth(subTotalText) / 1000f * 14f;
         cs.beginText();
         cs.newLineAtOffset((pageW - subTotalWidth) / 2f, y);
@@ -612,47 +605,17 @@ public class MainSlipPrintPreview {
         // Operations (centered)
         if (!mainSlip.getOperations().isEmpty()) {
             cs.setFont(font, 12f);
-            double operationsTotal = 0;
             for (MainSlip.Operation op : mainSlip.getOperations()) {
-                String opText = String.format("%s %s (%s)", 
-                    moneyFmt.format(op.getAmount()), op.getDescription(), op.getOperationType());
+                String opText = String.format("%.0f %s (%s)", 
+                    op.getAmount(), op.getDescription(), op.getOperationType());
                 float opWidth = font.getStringWidth(opText) / 1000f * 12f;
                 cs.beginText();
                 cs.newLineAtOffset((pageW - opWidth) / 2f, y);
                 cs.showText(opText);
                 cs.endText();
                 y -= 15f;
-                
-                if ("+".equals(op.getOperationType())) {
-                    operationsTotal += op.getAmount();
-                } else if ("-".equals(op.getOperationType())) {
-                    operationsTotal -= op.getAmount();
-                }
             }
-            
-            // Line above operations total
-            cs.setLineWidth(1f);
-            cs.moveTo(lineX, y);
-            cs.lineTo(lineX + lineWidth, y);
-            cs.stroke();
-            y -= 15f;
-            
-            // Operations total (centered)
-            cs.setFont(font, 14f);
-            String opTotalText = moneyFmt.format(operationsTotal);
-            float opTotalWidth = font.getStringWidth(opTotalText) / 1000f * 14f;
-            cs.beginText();
-            cs.newLineAtOffset((pageW - opTotalWidth) / 2f, y);
-            cs.showText(opTotalText);
-            cs.endText();
-            y -= 15f;
-            
-            // Line below operations total
-            cs.setLineWidth(1f);
-            cs.moveTo(lineX, y);
-            cs.lineTo(lineX + lineWidth, y);
-            cs.stroke();
-            y -= 25f;
+            y -= 10f; // Extra space before final amount
         }
         
         // Line above final amount (thicker)
@@ -664,7 +627,7 @@ public class MainSlipPrintPreview {
         
         // Final amount (centered, larger font)
         cs.setFont(font, 16f);
-        String finalText = moneyFmt.format(mainSlip.getTotalAfterOperations());
+        String finalText = String.format("%.0f", mainSlip.getTotalAfterOperations());
         float finalWidth = font.getStringWidth(finalText) / 1000f * 16f;
         cs.beginText();
         cs.newLineAtOffset((pageW - finalWidth) / 2f, y);
@@ -683,7 +646,7 @@ public class MainSlipPrintPreview {
     }
 
     private float addSubSlipContent(PDPageContentStream cs, PDType1Font font, SubSlip subSlip, float pageW, float startY) throws Exception {
-        float slipWidth = 400f;
+        float slipWidth = 300f; // Reduced from 400f to match main slip width
         float leftMargin = (pageW - slipWidth) / 2f;
         float y = startY;
         
@@ -840,11 +803,6 @@ public class MainSlipPrintPreview {
         parentScreen.start(stage);
     }
 }
-
-
-
-
-
 
 
 
