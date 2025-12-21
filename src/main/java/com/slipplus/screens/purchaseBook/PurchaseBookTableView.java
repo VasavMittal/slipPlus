@@ -642,24 +642,26 @@ public class PurchaseBookTableView {
 
     private float addPurchaseBookHeaders(PDPageContentStream cs, PDType1Font font, float margin, 
                                        float y, float columnWidth, List<Shortcut> shortcuts) throws Exception {
-        cs.setFont(font, 12f);
+        cs.setFont(font, 10f); // Slightly smaller header font
         
         float x = margin;
+        float headerHeight = 25f;
         
         // Draw vertical lines for headers
         for (int i = 0; i <= (6 + shortcuts.size()); i++) {
             float lineX = margin + (i * columnWidth);
             cs.setLineWidth(1f);
             cs.moveTo(lineX, y + 5f);
-            cs.lineTo(lineX, y - 20f);
+            cs.lineTo(lineX, y - headerHeight);
             cs.stroke();
         }
         
         // Fixed headers
         String[] fixedHeaders = {"Party Name", "Main Wt", "sub Wt"};
         for (String header : fixedHeaders) {
+            float textWidth = font.getStringWidth(header) / 1000f * 10f;
             cs.beginText();
-            cs.newLineAtOffset(x + 5f, y);
+            cs.newLineAtOffset(x + (columnWidth - textWidth) / 2f, y - 8f);
             cs.showText(header);
             cs.endText();
             x += columnWidth;
@@ -667,9 +669,11 @@ public class PurchaseBookTableView {
         
         // Shortcut headers
         for (Shortcut shortcut : shortcuts) {
+            String headerText = shortcut.getDescription();
+            float textWidth = font.getStringWidth(headerText) / 1000f * 10f;
             cs.beginText();
-            cs.newLineAtOffset(x + 5f, y);
-            cs.showText(shortcut.getDescription());
+            cs.newLineAtOffset(x + (columnWidth - textWidth) / 2f, y - 8f);
+            cs.showText(headerText);
             cs.endText();
             x += columnWidth;
         }
@@ -677,15 +681,16 @@ public class PurchaseBookTableView {
         // Remaining headers
         String[] remainingHeaders = {"Amount", "GST", "Total"};
         for (String header : remainingHeaders) {
+            float textWidth = font.getStringWidth(header) / 1000f * 10f;
             cs.beginText();
-            cs.newLineAtOffset(x + 5f, y);
+            cs.newLineAtOffset(x + (columnWidth - textWidth) / 2f, y - 8f);
             cs.showText(header);
             cs.endText();
             x += columnWidth;
         }
         
-        // Draw header line
-        y -= 15f;
+        // Draw header bottom line
+        y -= headerHeight;
         cs.setLineWidth(1f);
         cs.moveTo(margin, y);
         cs.lineTo(margin + (columnWidth * (6 + shortcuts.size())), y);
@@ -774,6 +779,7 @@ public class PurchaseBookTableView {
         return y - rowHeight;
     }
 }
+
 
 
 
