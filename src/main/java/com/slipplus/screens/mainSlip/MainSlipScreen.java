@@ -231,6 +231,17 @@ public class MainSlipScreen {
             double amount = Double.parseDouble(parts[0]);
             String shortcutKey = parts[1];
             
+            // Check if this shortcut is already used
+            boolean shortcutExists = operations.stream()
+                    .anyMatch(op -> op.getShortcutId().equals(shortcutKey));
+            
+            if (shortcutExists) {
+                showError("Shortcut '" + shortcutKey + "' is already used in this main slip!");
+                currentOperationField.clear();
+                Platform.runLater(() -> currentOperationField.requestFocus());
+                return;
+            }
+            
             // Find shortcut
             Shortcut shortcut = shortcuts.stream()
                     .filter(s -> s.getAlphabet().equals(shortcutKey))

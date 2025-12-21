@@ -96,19 +96,27 @@ class PriceCalculationEngine {
         ctx.totalsArea.setVisible(true);
         ctx.totalsArea.setManaged(true);
 
+        // Add listeners to update final value when GST changes
         ctx.gstField.setOnKeyReleased(e -> updateTotalsIfVisible());
+        ctx.gstField.textProperty().addListener((o, ov, nv) -> updateTotalsIfVisible());
+        
         ctx.gstField.requestFocus();
     }
 
 
     void updateTotalsIfVisible() {
         if (!ctx.totalsArea.isVisible()) return;
-        if (!ctx.totalsArea.getChildren().isEmpty()) {
-            Label totalVal = (Label) ctx.totalsArea.getChildren().get(0);
-            totalVal.setText(totalsFormatted());
-        }
+        if (ctx.totalsArea.getChildren().size() < 2) return;
+        
+        // Update total value label (second child - index 1)
+        Label totalVal = (Label) ctx.totalsArea.getChildren().get(1);
+        totalVal.setText(totalsFormatted());
+        
+        // Update final value label (last child with ID "finalValue")
         Label finalVal = (Label) ctx.totalsArea.lookup("#finalValue");
-        if (finalVal != null) finalVal.setText(finalFormatted());
+        if (finalVal != null) {
+            finalVal.setText(finalFormatted());
+        }
     }
 
     double totalsValue() {
