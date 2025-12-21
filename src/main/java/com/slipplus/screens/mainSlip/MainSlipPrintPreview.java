@@ -55,21 +55,14 @@ public class MainSlipPrintPreview {
         this.stage = stage;
         
         double screenWidth = Screen.getPrimary().getBounds().getWidth();
+        double screenHeight = Screen.getPrimary().getBounds().getHeight();
         this.fontSize = (screenWidth / 1920.0) * 18;
         if (fontSize < 14) fontSize = 14;
         
         BorderPane root = new BorderPane();
         root.setStyle("-fx-background-color: white;");
         
-        // Create preview content
-        VBox previewContent = createPreviewContent();
-        
-        ScrollPane scrollPane = new ScrollPane(previewContent);
-        scrollPane.setFitToWidth(true);
-        scrollPane.setStyle("-fx-background-color: white;");
-        root.setCenter(scrollPane);
-        
-        // Bottom buttons
+        // Top buttons (moved from bottom)
         HBox buttonArea = new HBox(20);
         buttonArea.setAlignment(Pos.CENTER);
         buttonArea.setPadding(new Insets(20));
@@ -87,8 +80,17 @@ public class MainSlipPrintPreview {
         backButton.setOnAction(e -> goBack());
 
         buttonArea.getChildren().addAll(printButton, saveButton, backButton);
-        root.setBottom(buttonArea);
+        root.setTop(buttonArea);
         
+        // Create preview content
+        VBox previewContent = createPreviewContent();
+        
+        ScrollPane scrollPane = new ScrollPane(previewContent);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setStyle("-fx-background-color: white;");
+        root.setCenter(scrollPane);
+        
+        // Use same sizing as MainSlipScreen
         Scene scene = new Scene(root, 1600, 900);
         scene.setOnKeyPressed(e -> {
             if (e.getCode() == KeyCode.ENTER) {
@@ -225,7 +227,9 @@ public class MainSlipPrintPreview {
     private VBox createSubSlipPreview(SubSlip slip, int slipNumber) {
         VBox slipBox = new VBox(3);
         slipBox.setAlignment(Pos.CENTER);
-        slipBox.setStyle("-fx-border-color: #ccc; -fx-border-width: 1; -fx-padding: 15; -fx-background-color: #f9f9f9;");
+        slipBox.setStyle("-fx-border-color: #ccc; -fx-border-width: 1; -fx-padding: 20; -fx-background-color: #f9f9f9;");
+        slipBox.setPrefHeight(400); // Increased height to show all content
+        slipBox.setMinHeight(400);
         
         Label slipTitle = new Label("Sub-slip " + slipNumber + ":");
         slipTitle.setStyle(String.format("-fx-font-size: %.0fpx; -fx-font-weight: bold;", fontSize * 0.9));
@@ -236,9 +240,9 @@ public class MainSlipPrintPreview {
         slipBox.getChildren().add(spacer);
         
         // Create the exact print format preview
-        VBox slipContent = new VBox(2);
+        VBox slipContent = new VBox(3); // Increased spacing
         slipContent.setAlignment(Pos.CENTER);
-        slipContent.setMaxWidth(250); // Reduced from 300 to match main slip width
+        slipContent.setMaxWidth(250);
         
         // Top line: Price1, Party name (centered), Truck number
         HBox topLine = new HBox();
@@ -378,6 +382,10 @@ public class MainSlipPrintPreview {
         finalLabel.setStyle(String.format("-fx-font-size: %.0fpx; -fx-font-family: monospace; -fx-font-weight: bold;", fontSize));
         finalLabel.setAlignment(Pos.CENTER);
         slipContent.getChildren().add(finalLabel);
+        
+        // Add extra spacing at bottom
+        Label bottomSpacer = new Label(" ");
+        slipContent.getChildren().add(bottomSpacer);
         
         slipBox.getChildren().add(slipContent);
         return slipBox;
@@ -844,10 +852,6 @@ public class MainSlipPrintPreview {
         parentScreen.start(stage);
     }
 }
-
-
-
-
 
 
 

@@ -18,6 +18,7 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
+import javafx.stage.Screen;
 import javafx.stage.Stage;
 
 import java.awt.print.PrinterJob;
@@ -45,38 +46,53 @@ public class PurchaseBookTableView {
     private TableView<PurchaseBookRow> table;
     private ObservableList<PurchaseBookRow> tableData;
     private DecimalFormat moneyFormat = new DecimalFormat("#,##0");
-    private BorderPane root; // Add this field
+    private BorderPane root;
+    private VBox tableContainer;
+    private double fontSize;
     
     public PurchaseBookTableView(LocalDate selectedDate) {
         this.selectedDate = selectedDate;
+        this.root = new BorderPane(); // Initialize root
     }
     
     public void start(Stage stage) {
         this.stage = stage;
         
-        root = new BorderPane(); // Store reference
+        double screenWidth = Screen.getPrimary().getBounds().getWidth();
+        double screenHeight = Screen.getPrimary().getBounds().getHeight();
+        this.fontSize = (screenWidth / 1920.0) * 18;
+        if (fontSize < 14) fontSize = 14;
+        
+        BorderPane root = new BorderPane();
         root.setStyle("-fx-background-color: white;");
         
-        // Create header
+        // Header with title and buttons
         VBox header = createHeader();
         root.setTop(header);
         
-        // Create table
+        // Create table content
         createTable();
         
+        ScrollPane scrollPane = new ScrollPane(tableContainer);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setStyle("-fx-background-color: white;");
+        root.setCenter(scrollPane);
+        
+        // Use same sizing as MainSlipScreen
         Scene scene = new Scene(root, 1600, 900);
         scene.setOnKeyPressed(e -> {
-            if (e.getCode() == KeyCode.ESCAPE) {
-                AppNavigator.startApp(stage);
-            } else if (e.getCode() == KeyCode.P) {
+            if (e.getCode() == KeyCode.P) {
                 printPurchaseBook();
             } else if (e.getCode() == KeyCode.S) {
                 savePurchaseBookAsPDF();
+            } else if (e.getCode() == KeyCode.ESCAPE) {
+                goBack();
             }
         });
         
         stage.setScene(scene);
         stage.setTitle("Purchase Book - " + selectedDate.format(DateTimeFormatter.ofPattern("dd-MM-yyyy")));
+        stage.setMaximized(true);
         stage.show();
     }
     
@@ -123,6 +139,9 @@ public class PurchaseBookTableView {
         
         // Load data rows (removed separator line)
         loadSimpleDataRows(content);
+        
+        // Store content as tableContainer
+        this.tableContainer = content;
         
         ScrollPane scrollPane = new ScrollPane(content);
         scrollPane.setFitToWidth(true);
@@ -857,7 +876,15 @@ public class PurchaseBookTableView {
         
         return y - rowHeight;
     }
+
+    private void goBack() {
+        AppNavigator.startApp(stage);
+    }
 }
+
+
+
+
 
 
 
