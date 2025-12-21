@@ -558,32 +558,38 @@ public class PurchaseBookTableView {
                 .filter(Shortcut::isShowInPurchaseBook)
                 .collect(Collectors.toList());
         
-        // Calculate column count and widths
-        int totalColumns = 6 + purchaseBookShortcuts.size();
+        // Calculate dynamic column widths
         float pageWidth = PDRectangle.A4.getWidth();
-        float margin = 40f;
+        float margin = 20f; // Reduced from 40f
         float tableWidth = pageWidth - (2 * margin);
-        float columnWidth = tableWidth / totalColumns;
+        
+        // Define custom column widths (in proportions)
+        float[] columnProportions = getColumnProportions(purchaseBookShortcuts.size());
+        float[] columnWidths = new float[columnProportions.length];
+        
+        for (int i = 0; i < columnProportions.length; i++) {
+            columnWidths[i] = tableWidth * columnProportions[i];
+        }
         
         PDPage currentPage = new PDPage(PDRectangle.A4);
         doc.addPage(currentPage);
         
         PDPageContentStream cs = new PDPageContentStream(doc, currentPage);
-        float currentY = PDRectangle.A4.getHeight() - 50f;
+        float currentY = PDRectangle.A4.getHeight() - 30f; // Reduced top margin
         
         // Add title
-        cs.setFont(font, 16f);
+        cs.setFont(font, 14f); // Reduced from 16f
         String title = "Purchase Book - " + selectedDate.format(DateTimeFormatter.ofPattern("dd-MM-yyyy"));
-        float titleWidth = font.getStringWidth(title) / 1000f * 16f;
+        float titleWidth = font.getStringWidth(title) / 1000f * 14f;
         cs.beginText();
         cs.newLineAtOffset((pageWidth - titleWidth) / 2f, currentY);
         cs.showText(title);
         cs.endText();
-        currentY -= 40f;
+        currentY -= 30f; // Reduced from 40f
         
         // Add headers
-        currentY = addPurchaseBookHeaders(cs, font, margin, currentY, columnWidth, purchaseBookShortcuts);
-        currentY -= 10f;
+        currentY = addPurchaseBookHeaders(cs, font, margin, currentY, columnWidths, purchaseBookShortcuts);
+        currentY -= 5f; // Reduced spacing
         
         // Add data rows
         for (Map.Entry<String, List<SubSlip>> entry : partiesData.entrySet()) {
@@ -598,17 +604,17 @@ public class PurchaseBookTableView {
             
             for (SubSlip subSlip : subSlips) {
                 // Check if we need a new page for this sub-slip
-                float neededHeight = subSlip.getSubWeights().size() * 20f + 30f;
-                if (currentY < neededHeight + 50f) {
+                float neededHeight = subSlip.getSubWeights().size() * 16f + 20f; // Reduced row height
+                if (currentY < neededHeight + 40f) {
                     cs.close();
                     currentPage = new PDPage(PDRectangle.A4);
                     doc.addPage(currentPage);
                     cs = new PDPageContentStream(doc, currentPage);
-                    currentY = PDRectangle.A4.getHeight() - 50f;
+                    currentY = PDRectangle.A4.getHeight() - 30f;
                     
                     // Add headers on new page
-                    currentY = addPurchaseBookHeaders(cs, font, margin, currentY, columnWidth, purchaseBookShortcuts);
-                    currentY -= 10f;
+                    currentY = addPurchaseBookHeaders(cs, font, margin, currentY, columnWidths, purchaseBookShortcuts);
+                    currentY -= 5f;
                 }
                 
                 // Add sub-slip rows
@@ -616,7 +622,7 @@ public class PurchaseBookTableView {
                     boolean isFirstRowOfSlip = (i == 0);
                     boolean isCenterRow = (i == subSlip.getSubWeights().size() / 2);
                     
-                    currentY = addPurchaseBookDataRow(cs, font, margin, currentY, columnWidth,
+                    currentY = addPurchaseBookDataRow(cs, font, margin, currentY, columnWidths,
                         isFirstRowOfParty ? partyName : "",
                         isFirstRowOfSlip ? subSlip.getMainWeight() : 0,
                         subSlip.getSubWeights().get(i),
@@ -630,155 +636,232 @@ public class PurchaseBookTableView {
                     isFirstRowOfParty = false;
                 }
                 
-                currentY -= 5f; // Space between sub-slips
+                currentY -= 3f; // Reduced space between sub-slips
             }
             
-            currentY -= 10f; // Space between parties
+            currentY -= 5f; // Reduced space between parties
         }
         
         cs.close();
         return doc;
     }
 
+    private float[] getColumnProportions(int shortcutCount) {
+        // Total columns: Party Name, Main Wt, Sub Wt, [shortcuts], Amount, GST, Total
+        int totalColumns = 6 + shortcutCount;
+        
+        float[] proportions = new float[totalColumns];
+        int index = 0;
+        
+        // Party Name - 25% of width
+        proportions[index++] = 0.25f;
+        
+        // Main Wt - 10% of width
+        proportions[index++] = 0.10f;
+        
+        // Sub Wt - 25% of width (most space for complex data)
+        proportions[index++] = 0.25f;
+        
+        // Shortcut columns - share 20% equally
+        float shortcutProportion = shortcutCount > 0 ? 0.20f / shortcutCount : 0f;
+        for (int i = 0; i < shortcutCount; i++) {
+            proportions[index++] = shortcutProportion;
+        }
+        
+        // Amount - 8% of width
+        proportions[index++] = 0.08f;
+        
+        // GST - 6% of width
+        proportions[index++] = 0.06f;
+        
+        // Total - 6% of width
+        proportions[index++] = 0.06f;
+        
+        return proportions;
+    }
+
     private float addPurchaseBookHeaders(PDPageContentStream cs, PDType1Font font, float margin, 
-                                       float y, float columnWidth, List<Shortcut> shortcuts) throws Exception {
-        cs.setFont(font, 10f); // Slightly smaller header font
+                                       float y, float[] columnWidths, List<Shortcut> shortcuts) throws Exception {
+        cs.setFont(font, 8f); // Reduced from 10f
         
         float x = margin;
-        float headerHeight = 25f;
+        float headerHeight = 20f; // Reduced from 25f
+        float tableWidth = 0f;
+        for (float width : columnWidths) {
+            tableWidth += width;
+        }
         
         // Draw vertical lines for headers
-        for (int i = 0; i <= (6 + shortcuts.size()); i++) {
-            float lineX = margin + (i * columnWidth);
-            cs.setLineWidth(1f);
-            cs.moveTo(lineX, y + 5f);
-            cs.lineTo(lineX, y - headerHeight);
+        float currentX = margin;
+        for (int i = 0; i <= columnWidths.length; i++) {
+            cs.setLineWidth(0.5f);
+            cs.moveTo(currentX, y + 3f);
+            cs.lineTo(currentX, y - headerHeight);
             cs.stroke();
+            if (i < columnWidths.length) {
+                currentX += columnWidths[i];
+            }
         }
         
         // Fixed headers
-        String[] fixedHeaders = {"Party Name", "Main Wt", "sub Wt"};
+        String[] fixedHeaders = {"Party Name", "Main Wt", "Sub Wt"};
+        int headerIndex = 0;
+        
         for (String header : fixedHeaders) {
-            float textWidth = font.getStringWidth(header) / 1000f * 10f;
+            float textWidth = font.getStringWidth(header) / 1000f * 8f;
             cs.beginText();
-            cs.newLineAtOffset(x + (columnWidth - textWidth) / 2f, y - 8f);
+            cs.newLineAtOffset(x + (columnWidths[headerIndex] - textWidth) / 2f, y - 6f);
             cs.showText(header);
             cs.endText();
-            x += columnWidth;
+            x += columnWidths[headerIndex];
+            headerIndex++;
         }
         
         // Shortcut headers
         for (Shortcut shortcut : shortcuts) {
             String headerText = shortcut.getDescription();
-            float textWidth = font.getStringWidth(headerText) / 1000f * 10f;
+            // Truncate if too long
+            if (headerText.length() > 8) {
+                headerText = headerText.substring(0, 8);
+            }
+            float textWidth = font.getStringWidth(headerText) / 1000f * 8f;
             cs.beginText();
-            cs.newLineAtOffset(x + (columnWidth - textWidth) / 2f, y - 8f);
+            cs.newLineAtOffset(x + (columnWidths[headerIndex] - textWidth) / 2f, y - 6f);
             cs.showText(headerText);
             cs.endText();
-            x += columnWidth;
+            x += columnWidths[headerIndex];
+            headerIndex++;
         }
         
         // Remaining headers
         String[] remainingHeaders = {"Amount", "GST", "Total"};
         for (String header : remainingHeaders) {
-            float textWidth = font.getStringWidth(header) / 1000f * 10f;
+            float textWidth = font.getStringWidth(header) / 1000f * 8f;
             cs.beginText();
-            cs.newLineAtOffset(x + (columnWidth - textWidth) / 2f, y - 8f);
+            cs.newLineAtOffset(x + (columnWidths[headerIndex] - textWidth) / 2f, y - 6f);
             cs.showText(header);
             cs.endText();
-            x += columnWidth;
+            x += columnWidths[headerIndex];
+            headerIndex++;
         }
         
         // Draw header bottom line
         y -= headerHeight;
-        cs.setLineWidth(1f);
+        cs.setLineWidth(0.5f);
         cs.moveTo(margin, y);
-        cs.lineTo(margin + (columnWidth * (6 + shortcuts.size())), y);
+        cs.lineTo(margin + tableWidth, y);
         cs.stroke();
         
-        return y - 5f;
+        return y - 3f;
     }
 
     private float addPurchaseBookDataRow(PDPageContentStream cs, PDType1Font font, float margin, 
-                                       float y, float columnWidth, String partyName, double mainWeight,
+                                       float y, float[] columnWidths, String partyName, double mainWeight,
                                        double subWeight, double rate, double totalBeforeGst, double gst,
                                        double finalAmount, Map<String, Double> dividedAmounts,
                                        List<Shortcut> shortcuts) throws Exception {
-        cs.setFont(font, 10f);
+        cs.setFont(font, 8f);
         
         float x = margin;
-        float rowHeight = 20f;
+        float rowHeight = 16f;
         
         // Draw vertical lines for each column
-        for (int i = 0; i <= (6 + shortcuts.size()); i++) {
-            float lineX = margin + (i * columnWidth);
-            cs.setLineWidth(0.5f);
-            cs.moveTo(lineX, y + 5f);
-            cs.lineTo(lineX, y - 15f);
+        float currentX = margin;
+        for (int i = 0; i <= columnWidths.length; i++) {
+            cs.setLineWidth(0.3f);
+            cs.moveTo(currentX, y + 3f);
+            cs.lineTo(currentX, y - 13f);
             cs.stroke();
+            if (i < columnWidths.length) {
+                currentX += columnWidths[i];
+            }
         }
         
-        // Party Name
-        cs.beginText();
-        cs.newLineAtOffset(x + 5f, y);
-        cs.showText(partyName);
-        cs.endText();
-        x += columnWidth;
+        int columnIndex = 0;
         
-        // Main Weight
-        String mainWeightText = mainWeight > 0 ? String.format("%,d", (int)mainWeight) : "";
+        // Party Name - center aligned
+        String displayPartyName = partyName;
+        if (displayPartyName.length() > 15) {
+            displayPartyName = displayPartyName.substring(0, 15);
+        }
+        float partyTextWidth = font.getStringWidth(displayPartyName) / 1000f * 8f;
         cs.beginText();
-        cs.newLineAtOffset(x + 5f, y);
+        cs.newLineAtOffset(x + (columnWidths[columnIndex] - partyTextWidth) / 2f, y);
+        cs.showText(displayPartyName);
+        cs.endText();
+        x += columnWidths[columnIndex++];
+        
+        // Main Weight - center aligned
+        String mainWeightText = mainWeight > 0 ? String.format("%.0f", mainWeight) : "";
+        float mainWeightTextWidth = font.getStringWidth(mainWeightText) / 1000f * 8f;
+        cs.beginText();
+        cs.newLineAtOffset(x + (columnWidths[columnIndex] - mainWeightTextWidth) / 2f, y);
         cs.showText(mainWeightText);
         cs.endText();
-        x += columnWidth;
+        x += columnWidths[columnIndex++];
         
-        // Sub Weight (Rate)
-        String rateText = rate == 0 ? String.format("%,d", (int)subWeight) : 
-                         String.format("%,d x %,d", (int)subWeight, (int)rate);
+        // Sub Weight (Rate) - center aligned
+        String rateText;
+        if (rate == 0) {
+            rateText = String.format("%.0f", subWeight);
+        } else {
+            rateText = String.format("%.0f x %.0f", subWeight, rate);
+            if (rateText.length() > 18) {
+                rateText = String.format("%.0f x %.0f", subWeight, rate);
+            }
+        }
+        float rateTextWidth = font.getStringWidth(rateText) / 1000f * 8f;
         cs.beginText();
-        cs.newLineAtOffset(x + 5f, y);
+        cs.newLineAtOffset(x + (columnWidths[columnIndex] - rateTextWidth) / 2f, y);
         cs.showText(rateText);
         cs.endText();
-        x += columnWidth;
+        x += columnWidths[columnIndex++];
         
-        // Shortcut columns
+        // Shortcut columns - center aligned
         for (Shortcut shortcut : shortcuts) {
             Double amount = dividedAmounts.get(shortcut.getAlphabet());
-            String shortcutText = (amount != null && amount > 0) ? String.format("%,d", (int)amount.doubleValue()) : "";
+            String shortcutText = (amount != null && amount > 0) ? String.format("%.0f", amount) : "";
+            float shortcutTextWidth = font.getStringWidth(shortcutText) / 1000f * 8f;
             cs.beginText();
-            cs.newLineAtOffset(x + 5f, y);
+            cs.newLineAtOffset(x + (columnWidths[columnIndex] - shortcutTextWidth) / 2f, y);
             cs.showText(shortcutText);
             cs.endText();
-            x += columnWidth;
+            x += columnWidths[columnIndex++];
         }
         
-        // Amount
-        String totalText = totalBeforeGst > 0 ? String.format("%,d", (int)totalBeforeGst) : "";
+        // Amount - center aligned
+        String totalText = totalBeforeGst > 0 ? String.format("%.0f", totalBeforeGst) : "";
+        float totalTextWidth = font.getStringWidth(totalText) / 1000f * 8f;
         cs.beginText();
-        cs.newLineAtOffset(x + 5f, y);
+        cs.newLineAtOffset(x + (columnWidths[columnIndex] - totalTextWidth) / 2f, y);
         cs.showText(totalText);
         cs.endText();
-        x += columnWidth;
+        x += columnWidths[columnIndex++];
         
-        // GST - Show value even if 0
-        String gstText = (gst >= 0 && (totalBeforeGst > 0 || gst > 0)) ? String.format("%,d", (int)gst) : "";
+        // GST - center aligned
+        String gstText = (gst >= 0 && (totalBeforeGst > 0 || gst > 0)) ? String.format("%.0f", gst) : "";
+        float gstTextWidth = font.getStringWidth(gstText) / 1000f * 8f;
         cs.beginText();
-        cs.newLineAtOffset(x + 5f, y);
+        cs.newLineAtOffset(x + (columnWidths[columnIndex] - gstTextWidth) / 2f, y);
         cs.showText(gstText);
         cs.endText();
-        x += columnWidth;
+        x += columnWidths[columnIndex++];
         
-        // Final Amount
-        String finalText = finalAmount > 0 ? String.format("%,d", (int)finalAmount) : "";
+        // Final Amount - center aligned
+        String finalText = finalAmount > 0 ? String.format("%.0f", finalAmount) : "";
+        float finalTextWidth = font.getStringWidth(finalText) / 1000f * 8f;
         cs.beginText();
-        cs.newLineAtOffset(x + 5f, y);
+        cs.newLineAtOffset(x + (columnWidths[columnIndex] - finalTextWidth) / 2f, y);
         cs.showText(finalText);
         cs.endText();
         
         return y - rowHeight;
     }
 }
+
+
+
+
 
 
 
