@@ -1,0 +1,26 @@
+[ {
+  "alphabet" : "T",
+  "description" : "TDS",
+  "operation" : "-",
+  "showInPurchaseBook" : true
+}, {
+  "alphabet" : "D",
+  "description" : "TDS 1",
+  "operation" : "-",
+  "showInPurchaseBook" : true
+}, {
+  "alphabet" : "C",
+  "description" : "TCS",
+  "operation" : "-",
+  "showInPurchaseBook" : true
+}, {
+  "alphabet" : "R",
+  "description" : "RTGS",
+  "operation" : "-",
+  "showInPurchaseBook" : false
+}, {
+  "alphabet" : "F",
+  "description" : "Frate",
+  "operation" : "+",
+  "showInPurchaseBook" : true
+} ]
