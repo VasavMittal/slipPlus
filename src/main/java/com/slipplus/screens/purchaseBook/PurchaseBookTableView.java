@@ -190,7 +190,7 @@ public class PurchaseBookTableView {
         }
         
         // Add remaining fixed headers: Amount, GST, Final Amount
-        String[] remainingHeaders = {"Amount", "GST", "Total"};
+        String[] remainingHeaders = {"Amount", "GST", "Truck No."};
         for (String header : remainingHeaders) {
             Label headerLabel = new Label(header);
             headerLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-border-color: black; -fx-border-width: 0 1 1 0; -fx-padding: 5;");
@@ -235,7 +235,8 @@ public class PurchaseBookTableView {
                         isFirstRowOfSlip ? subSlip.getMainWeight() : 0,
                         subSlip.getSubWeights().get(i),
                         subSlip.getCalculatedPrices().get(i),
-                        0, 0, 0, // Don't show totals initially
+                        0, 0, 
+                        subSlip.getTruckNumber(), // Don't show totals initially
                         columnWidth,
                         new HashMap<>() // Don't show shortcuts on any row initially
                     );
@@ -251,8 +252,8 @@ public class PurchaseBookTableView {
                 if (!subWeightRows.isEmpty()) {
                     updateGridRowWithTotals(subWeightRows.get(centerIndex), 
                         subSlip.getTotalBeforeGst(), 
-                        subSlip.getGst(), 
-                        calculateFinalAmount(subSlip, dividedAmounts),
+                        subSlip.getGst(),
+                        subSlip.getTruckNumber(), 
                         dividedAmounts); // Pass shortcuts only to center row
                 }
             }
@@ -264,7 +265,7 @@ public class PurchaseBookTableView {
     }
 
     private GridPane createDataRowGrid(String partyName, double mainWeight, double subWeight, 
-                                      double rate, double totalBeforeGst, double gst, double finalAmount, 
+                                      double rate, double totalBeforeGst, double gst, String truckNumber, 
                                       double columnWidth, Map<String, Double> dividedAmounts) {
         GridPane grid = new GridPane();
         
@@ -299,7 +300,7 @@ public class PurchaseBookTableView {
         }
         Label rateLabel = new Label(rateText);
         rateLabel.setPrefWidth(columnWidth);
-        rateLabel.setAlignment(Pos.CENTER);
+        rateLabel.setAlignment(Pos.CENTER_LEFT);
         rateLabel.setStyle("-fx-border-color: black; -fx-border-width: 0 1 0 0; -fx-padding: 5; -fx-font-size: 12px;");
         grid.add(rateLabel, columnIndex++, 0);
         
@@ -332,17 +333,17 @@ public class PurchaseBookTableView {
         grid.add(gstLabel, columnIndex++, 0);
         
         // Final Amount
-        String finalText = finalAmount > 0 ? String.format("%,d", (int)finalAmount) : "";
-        Label finalLabel = new Label(finalText);
-        finalLabel.setPrefWidth(columnWidth);
-        finalLabel.setAlignment(Pos.CENTER);
-        finalLabel.setStyle("-fx-border-color: black; -fx-border-width: 0 0 0 0; -fx-padding: 5; -fx-font-size: 12px;");
-        grid.add(finalLabel, columnIndex, 0);
+       Label truckLabel = new Label("");
+        truckLabel.setPrefWidth(columnWidth);
+        truckLabel.setAlignment(Pos.CENTER);
+        truckLabel.setStyle("-fx-border-color: black; -fx-border-width: 0 1 0 0; -fx-padding: 5; -fx-font-size: 12px;");
+        grid.add(truckLabel, columnIndex, 0);
+
         
         return grid;
     }
 
-    private void updateGridRowWithTotals(GridPane grid, double totalBeforeGst, double gst, double finalAmount, Map<String, Double> dividedAmounts) {
+    private void updateGridRowWithTotals(GridPane grid, double totalBeforeGst, double gst, String truckNumber, Map<String, Double> dividedAmounts) {
         List<Shortcut> purchaseBookShortcuts = StorageManager.loadShortcuts().stream()
                 .filter(Shortcut::isShowInPurchaseBook)
                 .collect(Collectors.toList());
@@ -351,7 +352,7 @@ public class PurchaseBookTableView {
         int shortcutStartIndex = 3; // After Party Name, Main Wt, sub Wt
         int amountIndex = shortcutStartIndex + purchaseBookShortcuts.size();
         int gstIndex = amountIndex + 1;
-        int finalAmountIndex = gstIndex + 1;
+        int truckIndex = gstIndex + 1;
         
         // Update shortcut columns with actual values
         for (int i = 0; i < purchaseBookShortcuts.size(); i++) {
@@ -370,10 +371,11 @@ public class PurchaseBookTableView {
         // Update GST - Show value even if 0
         Label gstLabel = (Label) grid.getChildren().get(gstIndex);
         gstLabel.setText((gst >= 0 && totalBeforeGst > 0) ? String.format("%,d", (int)gst) : "");
+
+        // Update Truck Number
+        Label truckLabel = (Label) grid.getChildren().get(truckIndex);
+        truckLabel.setText(truckNumber != null ? truckNumber : "");
         
-        // Update Final Amount
-        Label finalLabel = (Label) grid.getChildren().get(finalAmountIndex);
-        finalLabel.setText(finalAmount > 0 ? String.format("%,d", (int)finalAmount) : "");
     }
 
     private double getColumnWidth(int columnIndex) {
@@ -648,7 +650,7 @@ public class PurchaseBookTableView {
                         subSlip.getCalculatedPrices().get(i),
                         isCenterRow ? subSlip.getTotalBeforeGst() : 0,
                         isCenterRow ? subSlip.getGst() : 0,
-                        isCenterRow ? calculateFinalAmount(subSlip, dividedAmounts) : 0,
+                        isCenterRow ? subSlip.getTruckNumber() : "",
                         isCenterRow ? dividedAmounts : new HashMap<>(),
                         purchaseBookShortcuts);
                     
@@ -679,7 +681,7 @@ public class PurchaseBookTableView {
         proportions[index++] = 0.10f;
         
         // Sub Wt - 25% of width (most space for complex data)
-        proportions[index++] = 0.25f;
+        proportions[index++] = 0.20f;
         
         // Shortcut columns - share 20% equally
         float shortcutProportion = shortcutCount > 0 ? 0.20f / shortcutCount : 0f;
@@ -693,8 +695,8 @@ public class PurchaseBookTableView {
         // GST - 6% of width
         proportions[index++] = 0.06f;
         
-        // Total - 6% of width
-        proportions[index++] = 0.06f;
+        // Truck No - 11%   of width
+        proportions[index++] = 0.11f;
         
         return proportions;
     }
@@ -753,7 +755,7 @@ public class PurchaseBookTableView {
         }
         
         // Remaining headers
-        String[] remainingHeaders = {"Amount", "GST", "Total"};
+        String[] remainingHeaders = {"Amount", "GST", "Truck No"};
         for (String header : remainingHeaders) {
             float textWidth = font.getStringWidth(header) / 1000f * 8f;
             cs.beginText();
@@ -777,7 +779,7 @@ public class PurchaseBookTableView {
     private float addPurchaseBookDataRow(PDPageContentStream cs, PDType1Font font, float margin, 
                                        float y, float[] columnWidths, String partyName, double mainWeight,
                                        double subWeight, double rate, double totalBeforeGst, double gst,
-                                       double finalAmount, Map<String, Double> dividedAmounts,
+                                       String truckNumber, Map<String, Double> dividedAmounts,
                                        List<Shortcut> shortcuts) throws Exception {
         cs.setFont(font, 8f);
         
@@ -831,7 +833,7 @@ public class PurchaseBookTableView {
         }
         float rateTextWidth = font.getStringWidth(rateText) / 1000f * 8f;
         cs.beginText();
-        cs.newLineAtOffset(x + (columnWidths[columnIndex] - rateTextWidth) / 2f, y);
+        cs.newLineAtOffset(x + 4f, y);
         cs.showText(rateText);
         cs.endText();
         x += columnWidths[columnIndex++];
@@ -867,7 +869,7 @@ public class PurchaseBookTableView {
         x += columnWidths[columnIndex++];
         
         // Final Amount - center aligned
-        String finalText = finalAmount > 0 ? String.format("%.0f", finalAmount) : "";
+        String finalText = truckNumber != null ? truckNumber : "";
         float finalTextWidth = font.getStringWidth(finalText) / 1000f * 8f;
         cs.beginText();
         cs.newLineAtOffset(x + (columnWidths[columnIndex] - finalTextWidth) / 2f, y);

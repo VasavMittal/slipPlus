@@ -3,6 +3,7 @@ package com.slipplus.screens.purchaseBook;
 import com.slipplus.core.AppNavigator;
 import com.slipplus.core.StorageManager;
 import com.slipplus.models.SubSlip;
+import com.slipplus.screens.subSlipViewer.DateSelectionPopup;
 import com.slipplus.models.MainSlip;
 import com.slipplus.models.Shortcut;
 import javafx.application.Platform;
@@ -43,54 +44,27 @@ public class PurchaseBookScreen {
             showPurchaseBookTable();
         } else {
             // Show date selection popup
-            showDateSelectionPopup(availableDatesList);
+            showDateSelectionPopup();
         }
     }
     
-    private void showDateSelectionPopup(List<LocalDate> dates) {
-        popupOpen = true;
-        
-        VBox popup = new VBox(20);
-        popup.setAlignment(Pos.CENTER);
-        popup.setPadding(new Insets(30));
-        popup.setStyle("-fx-background-color: white; -fx-border-color: black; -fx-border-width: 2;");
-        
-        Label title = new Label("Select Date for Purchase Book");
-        title.setStyle("-fx-font-size: 24px; -fx-font-weight: bold;");
-        
-        VBox dateButtons = new VBox(10);
-        dateButtons.setAlignment(Pos.CENTER);
-        
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
-        
-        for (LocalDate date : dates.stream().sorted().toList()) {
-            Button dateBtn = new Button(date.format(formatter));
-            dateBtn.setStyle("-fx-font-size: 18px; -fx-pref-width: 200;");
-            dateBtn.setOnAction(e -> {
-                selectedDate = date;
-                popupOpen = false;
-                showPurchaseBookTable();
-            });
-            dateButtons.getChildren().add(dateBtn);
-        }
-        
-        popup.getChildren().addAll(title, dateButtons);
-        
-        BorderPane root = new BorderPane();
-        root.setCenter(popup);
-        root.setStyle("-fx-background-color: rgba(0,0,0,0.5);");
-        
-        Scene scene = new Scene(root, 800, 600);
-        scene.setOnKeyPressed(e -> {
-            if (e.getCode() == KeyCode.ESCAPE) {
-                popupOpen = false;
-                AppNavigator.startApp(stage);
-            }
-        });
-        
-        stage.setScene(scene);
-        stage.setTitle("Purchase Book - Date Selection");
-        stage.show();
+     private void showDateSelectionPopup() {
+        DateSelectionPopup datePopup =
+                new DateSelectionPopup(
+                        stage,
+                        this::onDateSelected,
+                        this::onExit
+                );
+        datePopup.show();
+    }
+
+    private void onDateSelected(LocalDate date) {
+        this.selectedDate = date;
+        showPurchaseBookTable();
+    }
+
+    private void onExit() {
+        AppNavigator.startApp(stage);
     }
     
     private void showPurchaseBookTable() {
