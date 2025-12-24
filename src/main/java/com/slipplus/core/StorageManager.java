@@ -42,6 +42,7 @@ public class StorageManager {
 
     public static void saveParties(List<Party> list) {
         try {
+            ensureDataDirExists();
             mapper.writerWithDefaultPrettyPrinter().writeValue(new File(PARTY_PATH), list);
         } catch (Exception e) {
             e.printStackTrace();
@@ -61,6 +62,7 @@ public class StorageManager {
 
     public static void saveSubSlip(LocalDate date, String partyKey, SubSlip slip) {
         try {
+            ensureDataDirExists();
             Map<String, Map<String, List<SubSlip>>> data = loadSubSlips();
             String dateKey = date.toString();
             data.putIfAbsent(dateKey, new HashMap<>());
@@ -310,6 +312,7 @@ public class StorageManager {
 
     public static void saveMainSlip(MainSlip mainSlip) {
         try {
+            ensureDataDirExists();
             Map<String, Map<String, MainSlip>> data = loadMainSlips();
             String dateKey = mainSlip.getDate().toString();
             data.putIfAbsent(dateKey, new HashMap<>());
