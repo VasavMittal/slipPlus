@@ -222,8 +222,6 @@ public class PurchaseBookTableView {
             MainSlip mainSlip = StorageManager.getMainSlip(selectedDate, partyName);
             Map<String, Double> dividedAmounts = calculateDividedAmounts(mainSlip, subSlips.size());
             
-            boolean isFirstRowOfParty = true;
-            
             for (SubSlip subSlip : subSlips) {
                 List<GridPane> subWeightRows = new ArrayList<>();
                 
@@ -231,7 +229,7 @@ public class PurchaseBookTableView {
                     boolean isFirstRowOfSlip = (i == 0);
                     
                     GridPane dataRow = createDataRowGrid(
-                        isFirstRowOfParty ? partyName : "",
+                        isFirstRowOfSlip ? partyName : "",
                         isFirstRowOfSlip ? subSlip.getMainWeight() : 0,
                         subSlip.getSubWeights().get(i),
                         subSlip.getCalculatedPrices().get(i),
@@ -241,7 +239,6 @@ public class PurchaseBookTableView {
                         new HashMap<>() // Don't show shortcuts on any row initially
                     );
                     subWeightRows.add(dataRow);
-                    isFirstRowOfParty = false;
                 }
                 
                 // Add all sub-weight rows
@@ -599,7 +596,7 @@ public class PurchaseBookTableView {
         float currentY = PDRectangle.A4.getHeight() - 30f; // Reduced top margin
         
         // Add title
-        cs.setFont(font, 14f); // Reduced from 16f
+        cs.setFont(font, 16f); // Reduced from 16f
         String title = "Purchase Book - " + selectedDate.format(DateTimeFormatter.ofPattern("dd-MM-yyyy"));
         float titleWidth = font.getStringWidth(title) / 1000f * 14f;
         cs.beginText();
@@ -620,8 +617,6 @@ public class PurchaseBookTableView {
             
             MainSlip mainSlip = StorageManager.getMainSlip(selectedDate, partyName);
             Map<String, Double> dividedAmounts = calculateDividedAmounts(mainSlip, subSlips.size());
-            
-            boolean isFirstRowOfParty = true;
             
             for (SubSlip subSlip : subSlips) {
                 // Check if we need a new page for this sub-slip
@@ -644,7 +639,7 @@ public class PurchaseBookTableView {
                     boolean isCenterRow = (i == subSlip.getSubWeights().size() / 2);
                     
                     currentY = addPurchaseBookDataRow(cs, font, margin, currentY, columnWidths,
-                        isFirstRowOfParty ? partyName : "",
+                        isFirstRowOfSlip ? partyName : "",
                         isFirstRowOfSlip ? subSlip.getMainWeight() : 0,
                         subSlip.getSubWeights().get(i),
                         subSlip.getCalculatedPrices().get(i),
@@ -653,8 +648,6 @@ public class PurchaseBookTableView {
                         isCenterRow ? subSlip.getTruckNumber() : "",
                         isCenterRow ? dividedAmounts : new HashMap<>(),
                         purchaseBookShortcuts);
-                    
-                    isFirstRowOfParty = false;
                 }
                 
                 currentY -= 3f; // Reduced space between sub-slips
@@ -675,7 +668,7 @@ public class PurchaseBookTableView {
         int index = 0;
         
         // Party Name - 25% of width
-        proportions[index++] = 0.25f;
+        proportions[index++] = 0.20f;
         
         // Main Wt - 10% of width
         proportions[index++] = 0.10f;
@@ -684,26 +677,26 @@ public class PurchaseBookTableView {
         proportions[index++] = 0.20f;
         
         // Shortcut columns - share 20% equally
-        float shortcutProportion = shortcutCount > 0 ? 0.20f / shortcutCount : 0f;
+        float shortcutProportion = shortcutCount > 0 ? 0.21f / shortcutCount : 0f;
         for (int i = 0; i < shortcutCount; i++) {
             proportions[index++] = shortcutProportion;
         }
         
         // Amount - 8% of width
-        proportions[index++] = 0.08f;
+        proportions[index++] = 0.09f;
         
         // GST - 6% of width
         proportions[index++] = 0.06f;
         
         // Truck No - 11%   of width
-        proportions[index++] = 0.11f;
+        proportions[index++] = 0.13f;
         
         return proportions;
     }
 
     private float addPurchaseBookHeaders(PDPageContentStream cs, PDType1Font font, float margin, 
                                        float y, float[] columnWidths, List<Shortcut> shortcuts) throws Exception {
-        cs.setFont(font, 8f); // Reduced from 10f
+        cs.setFont(font, 9f); // Reduced from 10f
         
         float x = margin;
         float headerHeight = 20f; // Reduced from 25f
@@ -781,17 +774,17 @@ public class PurchaseBookTableView {
                                        double subWeight, double rate, double totalBeforeGst, double gst,
                                        String truckNumber, Map<String, Double> dividedAmounts,
                                        List<Shortcut> shortcuts) throws Exception {
-        cs.setFont(font, 8f);
+        cs.setFont(font, 10.5f);
         
         float x = margin;
-        float rowHeight = 16f;
+        float rowHeight = 22f;
         
         // Draw vertical lines for each column
         float currentX = margin;
         for (int i = 0; i <= columnWidths.length; i++) {
             cs.setLineWidth(0.3f);
-            cs.moveTo(currentX, y + 3f);
-            cs.lineTo(currentX, y - 13f);
+            cs.moveTo(currentX, y + 5f);
+            cs.lineTo(currentX, y - 17f);
             cs.stroke();
             if (i < columnWidths.length) {
                 currentX += columnWidths[i];
@@ -806,8 +799,9 @@ public class PurchaseBookTableView {
             displayPartyName = displayPartyName.substring(0, 15);
         }
         float partyTextWidth = font.getStringWidth(displayPartyName) / 1000f * 8f;
+        float textYOffset = -4f; 
         cs.beginText();
-        cs.newLineAtOffset(x + (columnWidths[columnIndex] - partyTextWidth) / 2f, y);
+        cs.newLineAtOffset(x + (columnWidths[columnIndex] - partyTextWidth) / 2f, y + textYOffset);
         cs.showText(displayPartyName);
         cs.endText();
         x += columnWidths[columnIndex++];
@@ -816,7 +810,7 @@ public class PurchaseBookTableView {
         String mainWeightText = mainWeight > 0 ? String.format("%.0f", mainWeight) : "";
         float mainWeightTextWidth = font.getStringWidth(mainWeightText) / 1000f * 8f;
         cs.beginText();
-        cs.newLineAtOffset(x + (columnWidths[columnIndex] - mainWeightTextWidth) / 2f, y);
+        cs.newLineAtOffset(x + (columnWidths[columnIndex] - mainWeightTextWidth) / 2f, y + textYOffset);
         cs.showText(mainWeightText);
         cs.endText();
         x += columnWidths[columnIndex++];
@@ -833,7 +827,7 @@ public class PurchaseBookTableView {
         }
         float rateTextWidth = font.getStringWidth(rateText) / 1000f * 8f;
         cs.beginText();
-        cs.newLineAtOffset(x + 4f, y);
+        cs.newLineAtOffset(x + 4f, y + textYOffset);
         cs.showText(rateText);
         cs.endText();
         x += columnWidths[columnIndex++];

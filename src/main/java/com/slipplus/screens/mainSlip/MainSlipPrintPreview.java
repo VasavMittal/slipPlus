@@ -13,6 +13,7 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
@@ -263,171 +264,154 @@ public class MainSlipPrintPreview {
     }
 
     private VBox createSubSlipPreview(SubSlip slip, int slipNumber) {
+
         VBox slipBox = new VBox(3);
         slipBox.setAlignment(Pos.CENTER);
         slipBox.setStyle("-fx-border-color: #ccc; -fx-border-width: 1; -fx-padding: 20; -fx-background-color: #f9f9f9;");
-        slipBox.setPrefHeight(400); // Increased height to show all content
+        slipBox.setPrefHeight(400);
         slipBox.setMinHeight(400);
-        
+
         Label slipTitle = new Label("Sub-slip " + slipNumber + ":");
         slipTitle.setStyle(String.format("-fx-font-size: %.0fpx; -fx-font-weight: bold;", fontSize * 0.9));
         slipBox.getChildren().add(slipTitle);
-        
-        // Add space after title
-        Label spacer = new Label(" ");
-        slipBox.getChildren().add(spacer);
-        
-        // Create the exact print format preview
-        VBox slipContent = new VBox(3); // Increased spacing
+
+        slipBox.getChildren().add(new Label(" "));
+
+        VBox slipContent = new VBox(3);
         slipContent.setAlignment(Pos.CENTER);
         slipContent.setMaxWidth(250);
-        
-        // Top line: Price1, Party name (centered), Truck number
+
+        /* ================= TOP LINE ================= */
+
         HBox topLine = new HBox();
         topLine.setAlignment(Pos.CENTER);
-        topLine.setPrefWidth(230); // Reduced from 280
-        
+        topLine.setPrefWidth(230);
+
         Label price1Label = new Label(String.format("%.0f", slip.getPrice1()));
         price1Label.setStyle(String.format("-fx-font-size: %.0fpx; -fx-font-family: monospace;", fontSize * 0.8));
-        
+
         Label partyNameLabel = new Label(slip.getPartyName());
         partyNameLabel.setStyle(String.format("-fx-font-size: %.0fpx; -fx-font-family: monospace;", fontSize * 0.8));
-        
+
         Label truckLabel = new Label(slip.getTruckNumber());
         truckLabel.setStyle(String.format("-fx-font-size: %.0fpx; -fx-font-family: monospace;", fontSize * 0.8));
-        
-        Region spacer1 = new Region();
-        Region spacer2 = new Region();
-        HBox.setHgrow(spacer1, javafx.scene.layout.Priority.ALWAYS);
-        HBox.setHgrow(spacer2, javafx.scene.layout.Priority.ALWAYS);
-        
-        topLine.getChildren().addAll(price1Label, spacer1, partyNameLabel, spacer2, truckLabel);
+
+        Region s1 = new Region();
+        Region s2 = new Region();
+        HBox.setHgrow(s1, Priority.ALWAYS);
+        HBox.setHgrow(s2, Priority.ALWAYS);
+
+        topLine.getChildren().addAll(price1Label, s1, partyNameLabel, s2, truckLabel);
         slipContent.getChildren().add(topLine);
-        
-        // Price2 (left aligned, below price1)
+
+        /* ================= PRICE 2 ================= */
+
         HBox price2Line = new HBox();
         price2Line.setAlignment(Pos.CENTER_LEFT);
-        price2Line.setPrefWidth(230); // Reduced from 280
-        
+        price2Line.setPrefWidth(230);
+
         Label price2Label = new Label(String.format("%.0f", slip.getPrice2()));
         price2Label.setStyle(String.format("-fx-font-size: %.0fpx; -fx-font-family: monospace;", fontSize * 0.8));
+
         price2Line.getChildren().add(price2Label);
         slipContent.getChildren().add(price2Line);
-        
-        // Horizontal line
-        Label line1 = new Label("____________________"); // Reduced from 25 underscores to 20
-        line1.setStyle(String.format("-fx-font-size: %.0fpx; -fx-font-family: monospace;", fontSize * 0.6));
-        slipContent.getChildren().add(line1);
-        
-        // Main calculation line: mainWeight - subWeight × calculatedPrice
+
+        /* ================= LINE ================= */
+
+        slipContent.getChildren().add(
+            new Label("____________________")
+        );
+
+        /* ================= FIRST CALC LINE ================= */
+
         HBox calcLine1 = new HBox();
         calcLine1.setAlignment(Pos.CENTER_LEFT);
-        calcLine1.setPrefWidth(230); // Reduced from 280
+        calcLine1.setPrefWidth(230);
 
-        String calc1Text = String.format("%.0f - %.0f × %.0f", 
-            slip.getMainWeight(), 
-            slip.getSubWeights().get(0), 
-            slip.getCalculatedPrices().get(0));
-        Label calc1Label = new Label(calc1Text);
+        Label calc1Label = new Label(String.format("%.0f - %.0f × %.0f",
+                slip.getMainWeight(),
+                slip.getSubWeights().get(0),
+                slip.getCalculatedPrices().get(0)));
+
         calc1Label.setStyle(String.format("-fx-font-size: %.0fpx; -fx-font-family: monospace;", fontSize * 0.8));
 
-        String quality1Text = String.format("%+.0f", slip.getQualityValues().get(0));
-        Label quality1Label = new Label(quality1Text);
+        Label quality1Label = new Label(String.format("%+.0f", slip.getQualityValues().get(0)));
         quality1Label.setStyle(String.format("-fx-font-size: %.0fpx; -fx-font-family: monospace;", fontSize * 0.8));
 
-        Region spacer3 = new Region();
-        HBox.setHgrow(spacer3, javafx.scene.layout.Priority.ALWAYS);
+        Region s3 = new Region();
+        HBox.setHgrow(s3, Priority.ALWAYS);
 
-        calcLine1.getChildren().addAll(calc1Label, spacer3, quality1Label);
+        calcLine1.getChildren().addAll(calc1Label, s3, quality1Label);
         slipContent.getChildren().add(calcLine1);
 
-        // Second calculation line: subWeight × calculatedPrice (aligned under first subWeight)
-        if (slip.getSubWeights().size() > 1) {
-            HBox calcLine2 = new HBox();
-            calcLine2.setAlignment(Pos.CENTER_LEFT);
-            calcLine2.setPrefWidth(230); // Reduced from 280
-            
-            // Calculate spacing to align under first subWeight (after "6500 - ")
-            String mainWeightText = String.format("%.0f - ", slip.getMainWeight());
-            Label spacingLabel = new Label(mainWeightText);
-            spacingLabel.setStyle(String.format("-fx-font-size: %.0fpx; -fx-font-family: monospace; -fx-text-fill: transparent;", fontSize * 0.8));
-            
-            String calc2Text = String.format("%.0f × %.0f", 
-                slip.getSubWeights().get(1), 
-                slip.getCalculatedPrices().get(1));
-            Label calc2Label = new Label(calc2Text);
-            calc2Label.setStyle(String.format("-fx-font-size: %.0fpx; -fx-font-family: monospace;", fontSize * 0.8));
-            
-            String quality2Text = String.format("%+.0f", slip.getQualityValues().get(1));
-            Label quality2Label = new Label(quality2Text);
-            quality2Label.setStyle(String.format("-fx-font-size: %.0fpx; -fx-font-family: monospace;", fontSize * 0.8));
-            
-            Region spacer4 = new Region();
-            HBox.setHgrow(spacer4, javafx.scene.layout.Priority.ALWAYS);
-            
-            calcLine2.getChildren().addAll(spacingLabel, calc2Label, spacer4, quality2Label);
-            slipContent.getChildren().add(calcLine2);
+        /* ================= REMAINING SUB-WEIGHTS (LAST = DUST) ================= */
+
+        int count = slip.getSubWeights().size();
+
+        for (int i = 1; i < count; i++) {
+
+            boolean isDust = (i == count - 1);
+
+            HBox calcLine = new HBox();
+            calcLine.setAlignment(Pos.CENTER_LEFT);
+            calcLine.setPrefWidth(230);
+
+            // spacing to align under "xxxx - "
+            Label spacingLabel = new Label(String.format("%.0f - ", slip.getMainWeight()));
+            spacingLabel.setStyle(String.format(
+                    "-fx-font-size: %.0fpx; -fx-font-family: monospace; -fx-text-fill: transparent;",
+                    fontSize * 0.8
+            ));
+
+            Label leftLabel;
+            if (isDust) {
+                leftLabel = new Label(String.format("%.0f", slip.getSubWeights().get(i)));
+            } else {
+                leftLabel = new Label(String.format("%.0f × %.0f",
+                        slip.getSubWeights().get(i),
+                        slip.getCalculatedPrices().get(i)));
+            }
+
+            leftLabel.setStyle(String.format("-fx-font-size: %.0fpx; -fx-font-family: monospace;", fontSize * 0.8));
+
+            Label rightLabel;
+            if (isDust) {
+                rightLabel = new Label(slip.getDustDiscount());   // N or value
+            } else {
+                rightLabel = new Label(String.format("%+.0f", slip.getQualityValues().get(i)));
+            }
+
+            rightLabel.setStyle(String.format("-fx-font-size: %.0fpx; -fx-font-family: monospace;", fontSize * 0.8));
+
+            Region s4 = new Region();
+            HBox.setHgrow(s4, Priority.ALWAYS);
+
+            calcLine.getChildren().addAll(spacingLabel, leftLabel, s4, rightLabel);
+            slipContent.getChildren().add(calcLine);
         }
 
-        // Third line: subWeight and dustDiscount (aligned under previous subWeight)
-        if (slip.getSubWeights().size() > 2) {
-            HBox calcLine3 = new HBox();
-            calcLine3.setAlignment(Pos.CENTER_LEFT);
-            calcLine3.setPrefWidth(230); // Reduced from 280
-            
-            // Calculate spacing to align under first subWeight (after "6500 - ")
-            String mainWeightText = String.format("%.0f - ", slip.getMainWeight());
-            Label spacingLabel2 = new Label(mainWeightText);
-            spacingLabel2.setStyle(String.format("-fx-font-size: %.0fpx; -fx-font-family: monospace; -fx-text-fill: transparent;", fontSize * 0.8));
-            
-            Label subWeight3Label = new Label(String.format("%.0f", slip.getSubWeights().get(2)));
-            subWeight3Label.setStyle(String.format("-fx-font-size: %.0fpx; -fx-font-family: monospace;", fontSize * 0.8));
-            
-            Label dustLabel = new Label(slip.getDustDiscount());
-            dustLabel.setStyle(String.format("-fx-font-size: %.0fpx; -fx-font-family: monospace;", fontSize * 0.8));
-            
-            Region spacer5 = new Region();
-            HBox.setHgrow(spacer5, javafx.scene.layout.Priority.ALWAYS);
-            
-            calcLine3.getChildren().addAll(spacingLabel2, subWeight3Label, spacer5, dustLabel);
-            slipContent.getChildren().add(calcLine3);
-        }
-        
-        // Horizontal line
-        Label line2 = new Label("____________________"); // Reduced from 25 underscores to 20
-        line2.setStyle(String.format("-fx-font-size: %.0fpx; -fx-font-family: monospace;", fontSize * 0.6));
-        slipContent.getChildren().add(line2);
-        
-        // Total before GST (centered)
-        Label totalBeforeLabel = new Label(String.format("%.0f", slip.getTotalBeforeGst()));
-        totalBeforeLabel.setStyle(String.format("-fx-font-size: %.0fpx; -fx-font-family: monospace; -fx-font-weight: bold;", fontSize * 0.9));
-        totalBeforeLabel.setAlignment(Pos.CENTER);
-        slipContent.getChildren().add(totalBeforeLabel);
-        
-        // GST (centered)
+        /* ================= TOTAL / GST / FINAL ================= */
+
+        slipContent.getChildren().add(new Label("____________________"));
+
+        Label totalBefore = new Label(String.format("%.0f", slip.getTotalBeforeGst()));
+        totalBefore.setStyle(String.format("-fx-font-size: %.0fpx; -fx-font-family: monospace; -fx-font-weight: bold;", fontSize * 0.9));
+        slipContent.getChildren().add(totalBefore);
+
         Label gstLabel = new Label(String.format("%.0f", slip.getGst()));
         gstLabel.setStyle(String.format("-fx-font-size: %.0fpx; -fx-font-family: monospace;", fontSize * 0.8));
-        gstLabel.setAlignment(Pos.CENTER);
         slipContent.getChildren().add(gstLabel);
-        
-        // Final horizontal line
-        Label line3 = new Label("____________________"); // Reduced from 25 underscores to 20
-        line3.setStyle(String.format("-fx-font-size: %.0fpx; -fx-font-family: monospace;", fontSize * 0.6));
-        slipContent.getChildren().add(line3);
-        
-        // Final amount (centered)
+
+        slipContent.getChildren().add(new Label("____________________"));
+
         Label finalLabel = new Label(String.format("%.0f", slip.getFinalAmount()));
         finalLabel.setStyle(String.format("-fx-font-size: %.0fpx; -fx-font-family: monospace; -fx-font-weight: bold;", fontSize));
-        finalLabel.setAlignment(Pos.CENTER);
         slipContent.getChildren().add(finalLabel);
-        
-        // Add extra spacing at bottom
-        Label bottomSpacer = new Label(" ");
-        slipContent.getChildren().add(bottomSpacer);
-        
+
         slipBox.getChildren().add(slipContent);
         return slipBox;
     }
+
     
     private void printMainSlipAndSubSlips() {
         try {
@@ -832,28 +816,36 @@ public class MainSlipPrintPreview {
         return y;
     }
 
-    private float addSubSlipContent(PDPageContentStream cs, PDType1Font font, SubSlip subSlip, float pageW, float startY) throws Exception {
-        float slipWidth = 300f; // Reduced from 400f to match main slip width
+    private float addSubSlipContent(
+            PDPageContentStream cs,
+            PDType1Font font,
+            SubSlip subSlip,
+            float pageW,
+            float startY
+    ) throws Exception {
+
+        float slipWidth = 300f;
         float leftMargin = (pageW - slipWidth) / 2f;
         float y = startY;
-        
-        // Top line: Price1 (left), Party name (center), Truck number (right)
+
+        /* ================= TOP LINE ================= */
+
         cs.setFont(font, 12f);
-        
+
         // Price1 (left)
         cs.beginText();
         cs.newLineAtOffset(leftMargin, y);
         cs.showText(String.format("%.0f", subSlip.getPrice1()));
         cs.endText();
-        
-        // Party name (centered)
+
+        // Party name (center)
         String partyText = subSlip.getPartyName();
         float partyWidth = font.getStringWidth(partyText) / 1000f * 12f;
         cs.beginText();
         cs.newLineAtOffset(leftMargin + (slipWidth - partyWidth) / 2f, y);
         cs.showText(partyText);
         cs.endText();
-        
+
         // Truck number (right)
         String truckText = subSlip.getTruckNumber();
         float truckWidth = font.getStringWidth(truckText) / 1000f * 12f;
@@ -861,128 +853,152 @@ public class MainSlipPrintPreview {
         cs.newLineAtOffset(leftMargin + slipWidth - truckWidth, y);
         cs.showText(truckText);
         cs.endText();
+
         y -= 18f;
-        
-        // Price2 (left aligned, below price1)
+
+        /* ================= PRICE 2 ================= */
+
         cs.beginText();
         cs.newLineAtOffset(leftMargin, y);
         cs.showText(String.format("%.0f", subSlip.getPrice2()));
         cs.endText();
+
         y -= 18f;
-        
-        // Horizontal line
+
+        /* ================= LINE ================= */
+
         cs.setLineWidth(1f);
         cs.moveTo(leftMargin, y);
         cs.lineTo(leftMargin + slipWidth, y);
         cs.stroke();
+
         y -= 18f;
-        
-        // Main calculation line: mainWeight - subWeight × calculatedPrice
-        String calc1Text = String.format("%.0f - %.0f × %.0f", 
-            subSlip.getMainWeight(), 
-            subSlip.getSubWeights().get(0), 
-            subSlip.getCalculatedPrices().get(0));
+
+        /* ================= FIRST CALC LINE ================= */
+
+        String calc1Text = String.format("%.0f - %.0f × %.0f",
+                subSlip.getMainWeight(),
+                subSlip.getSubWeights().get(0),
+                subSlip.getCalculatedPrices().get(0));
+
         cs.beginText();
         cs.newLineAtOffset(leftMargin, y);
         cs.showText(calc1Text);
         cs.endText();
-        
-        // Quality value (right aligned)
+
         String quality1Text = String.format("%+.0f", subSlip.getQualityValues().get(0));
-        float quality1Width = font.getStringWidth(quality1Text) / 1000f * 12f;
+        float q1Width = font.getStringWidth(quality1Text) / 1000f * 12f;
+
         cs.beginText();
-        cs.newLineAtOffset(leftMargin + slipWidth - quality1Width, y);
+        cs.newLineAtOffset(leftMargin + slipWidth - q1Width, y);
         cs.showText(quality1Text);
         cs.endText();
+
         y -= 18f;
-        
-        // Additional calculation lines if needed
-        if (subSlip.getSubWeights().size() > 1) {
-            String mainWeightSpacing = String.format("%.0f - ", subSlip.getMainWeight());
-            float spacingWidth = font.getStringWidth(mainWeightSpacing) / 1000f * 12f;
-            
-            String calc2Text = String.format("%.0f × %.0f", 
-                subSlip.getSubWeights().get(1), 
-                subSlip.getCalculatedPrices().get(1));
+
+        /* ================= REMAINING SUB-WEIGHTS (LAST = DUST) ================= */
+
+        int count = subSlip.getSubWeights().size();
+        String mainWeightSpacing = String.format("%.0f - ", subSlip.getMainWeight());
+        float spacingWidth = font.getStringWidth(mainWeightSpacing) / 1000f * 12f;
+
+        for (int i = 1; i < count; i++) {
+
+            boolean isDust = (i == count - 1);
+
+            // LEFT SIDE
+            String leftText;
+            if (isDust) {
+                // dust → only weight
+                leftText = String.format("%.0f", subSlip.getSubWeights().get(i));
+            } else {
+                leftText = String.format("%.0f × %.0f",
+                        subSlip.getSubWeights().get(i),
+                        subSlip.getCalculatedPrices().get(i));
+            }
+
             cs.beginText();
             cs.newLineAtOffset(leftMargin + spacingWidth, y);
-            cs.showText(calc2Text);
+            cs.showText(leftText);
             cs.endText();
-            
-            String quality2Text = String.format("%+.0f", subSlip.getQualityValues().get(1));
-            float quality2Width = font.getStringWidth(quality2Text) / 1000f * 12f;
+
+            // RIGHT SIDE
+            String rightText;
+            if (isDust) {
+                rightText = subSlip.getDustDiscount(); // N or value
+            } else {
+                rightText = String.format("%+.0f", subSlip.getQualityValues().get(i));
+            }
+
+            float rightWidth = font.getStringWidth(rightText) / 1000f * 12f;
             cs.beginText();
-            cs.newLineAtOffset(leftMargin + slipWidth - quality2Width, y);
-            cs.showText(quality2Text);
+            cs.newLineAtOffset(leftMargin + slipWidth - rightWidth, y);
+            cs.showText(rightText);
             cs.endText();
+
             y -= 18f;
         }
-        
-        if (subSlip.getSubWeights().size() > 2) {
-            String mainWeightSpacing = String.format("%.0f - ", subSlip.getMainWeight());
-            float spacingWidth = font.getStringWidth(mainWeightSpacing) / 1000f * 12f;
-            
-            String subWeight3Text = String.format("%.0f", subSlip.getSubWeights().get(2));
-            cs.beginText();
-            cs.newLineAtOffset(leftMargin + spacingWidth, y);
-            cs.showText(subWeight3Text);
-            cs.endText();
-            
-            String dustText = subSlip.getDustDiscount();
-            float dustWidth = font.getStringWidth(dustText) / 1000f * 12f;
-            cs.beginText();
-            cs.newLineAtOffset(leftMargin + slipWidth - dustWidth, y);
-            cs.showText(dustText);
-            cs.endText();
-            y -= 18f;
-        }
-        
-        // Bottom horizontal line
+
+        /* ================= BOTTOM LINE ================= */
+
         cs.setLineWidth(2f);
         cs.moveTo(leftMargin, y);
         cs.lineTo(leftMargin + slipWidth, y);
         cs.stroke();
+
         y -= 20f;
-        
-        // Total before GST (centered)
+
+        /* ================= TOTAL BEFORE GST ================= */
+
         cs.setFont(font, 14f);
         String totalText = String.format("%.0f", subSlip.getTotalBeforeGst());
         float totalWidth = font.getStringWidth(totalText) / 1000f * 14f;
+
         cs.beginText();
         cs.newLineAtOffset(leftMargin + (slipWidth - totalWidth) / 2f, y);
         cs.showText(totalText);
         cs.endText();
+
         y -= 20f;
-        
-        // GST (centered)
+
+        /* ================= GST ================= */
+
         cs.setFont(font, 12f);
         String gstText = String.format("%.0f", subSlip.getGst());
         float gstWidth = font.getStringWidth(gstText) / 1000f * 12f;
+
         cs.beginText();
         cs.newLineAtOffset(leftMargin + (slipWidth - gstWidth) / 2f, y);
         cs.showText(gstText);
         cs.endText();
+
         y -= 18f;
-        
-        // Final horizontal line
+
+        /* ================= FINAL LINE ================= */
+
         cs.setLineWidth(2f);
         cs.moveTo(leftMargin, y);
         cs.lineTo(leftMargin + slipWidth, y);
         cs.stroke();
+
         y -= 20f;
-        
-        // Final amount (centered, bold)
+
+        /* ================= FINAL AMOUNT ================= */
+
         cs.setFont(font, 16f);
         String finalText = String.format("%.0f", subSlip.getFinalAmount());
         float finalWidth = font.getStringWidth(finalText) / 1000f * 16f;
+
         cs.beginText();
         cs.newLineAtOffset(leftMargin + (slipWidth - finalWidth) / 2f, y);
         cs.showText(finalText);
         cs.endText();
+
         y -= 40f;
-        
+
         return y;
     }
+
     
     private void goBack() {
         // Reset popup flag when going back
