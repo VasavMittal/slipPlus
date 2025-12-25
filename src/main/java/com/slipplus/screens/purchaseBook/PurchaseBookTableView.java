@@ -203,6 +203,12 @@ public class PurchaseBookTableView {
     }
 
     private void loadSimpleDataRows(VBox container) {
+
+        double grandTotalMainWeight = 0;
+        double grandTotalAmount = 0;
+        double grandTotalGst = 0;
+        Map<String, Double> grandOperationTotals = new HashMap<>();
+
         Map<String, List<SubSlip>> partiesData = StorageManager.getSubSlipsGroupedByParty(selectedDate);
         
         // Get shortcuts for column calculation
@@ -220,10 +226,19 @@ public class PurchaseBookTableView {
             String partyName = StorageManager.getPartyNameById(partyId);
             
             MainSlip mainSlip = StorageManager.getMainSlip(selectedDate, partyName);
-            Map<String, Double> dividedAmounts = calculateDividedAmounts(mainSlip, subSlips.size());
+            Map<String, Double> operationAmounts = calculateOperationAmounts(mainSlip);
+
+            for (Map.Entry<String, Double> op : operationAmounts.entrySet()) {
+                grandOperationTotals.merge(op.getKey(), op.getValue(), Double::sum);
+            }
             
             for (SubSlip subSlip : subSlips) {
                 List<GridPane> subWeightRows = new ArrayList<>();
+                grandTotalMainWeight += subSlip.getMainWeight();
+                grandTotalAmount += subSlip.getTotalBeforeGst();
+                grandTotalGst += subSlip.getGst();
+
+                boolean isFirstSubSlipOfParty = (subSlip == subSlips.get(0));
                 
                 for (int i = 0; i < subSlip.getSubWeights().size(); i++) {
                     boolean isFirstRowOfSlip = (i == 0);
@@ -244,21 +259,47 @@ public class PurchaseBookTableView {
                 // Add all sub-weight rows
                 container.getChildren().addAll(subWeightRows);
                 
-                // Add totals AND shortcuts to center row only
-                int centerIndex = subWeightRows.size() / 2;
+                // Add totals AND shortcuts to FIRST sub-weight row (like main weight)
                 if (!subWeightRows.isEmpty()) {
-                    updateGridRowWithTotals(subWeightRows.get(centerIndex), 
-                        subSlip.getTotalBeforeGst(), 
+                    updateGridRowWithTotals(
+                        subWeightRows.get(0), // FIRST row
+                        subSlip.getTotalBeforeGst(),
                         subSlip.getGst(),
-                        subSlip.getTruckNumber(), 
-                        dividedAmounts); // Pass shortcuts only to center row
+                        subSlip.getTruckNumber(),
+                        isFirstSubSlipOfParty ? operationAmounts : new HashMap<>()
+                    );
                 }
+
             }
             
             // Add space between parties
             Label spacer = new Label(" ");
             container.getChildren().add(spacer);
         }
+        // ===== GRAND TOTAL ROW =====
+        GridPane totalRow = createDataRowGrid(
+            "TOTAL",
+            grandTotalMainWeight,
+            0,      // no sub weight
+            0,      // no rate
+            grandTotalAmount,
+            grandTotalGst,
+            "",     // no truck number
+            columnWidth,
+            grandOperationTotals
+        );
+
+        // Make it bold
+        totalRow.getChildren().forEach(node -> {
+            if (node instanceof Label) {
+                ((Label) node).setStyle(
+                    "-fx-font-weight: bold; -fx-border-color: black; -fx-border-width: 1 1 1 1; -fx-padding: 5;"
+                );
+            }
+        });
+
+        container.getChildren().add(totalRow);
+
     }
 
     private GridPane createDataRowGrid(String partyName, double mainWeight, double subWeight, 
@@ -374,102 +415,24 @@ public class PurchaseBookTableView {
         truckLabel.setText(truckNumber != null ? truckNumber : "");
         
     }
-
-    private double getColumnWidth(int columnIndex) {
-        switch (columnIndex) {
-            case 0: return 150; // Party Name
-            case 1: return 120; // Main Weight
-            case 2: return 100; // Sub Weight
-            case 3: return 180; // Rate (wider for "× format")
-            default: return 120; // Shortcuts and final columns
-        }
-    }
     
-    private void loadData() {
-        tableData = FXCollections.observableArrayList();
+    private Map<String, Double> calculateOperationAmounts(MainSlip mainSlip) {
+        Map<String, Double> amounts = new HashMap<>();
         
-        // Get all parties with sub-slips for this date
-        Map<String, List<SubSlip>> partiesData = StorageManager.getSubSlipsGroupedByParty(selectedDate);
-        
-        for (Map.Entry<String, List<SubSlip>> entry : partiesData.entrySet()) {
-            String partyId = entry.getKey();
-            List<SubSlip> subSlips = entry.getValue();
-            String partyName = StorageManager.getPartyNameById(partyId);
-            
-            // Get main slip for this party to get operation amounts
-            MainSlip mainSlip = StorageManager.getMainSlip(selectedDate, partyName);
-            Map<String, Double> dividedAmounts = calculateDividedAmounts(mainSlip, subSlips.size());
-            
-            // Create rows for each sub-slip and its sub-weights
-            for (int slipIndex = 0; slipIndex < subSlips.size(); slipIndex++) {
-                SubSlip subSlip = subSlips.get(slipIndex);
-                
-                // Create rows for each sub-weight
-                for (int weightIndex = 0; weightIndex < subSlip.getSubWeights().size(); weightIndex++) {
-                    boolean isFirstRowOfParty = (slipIndex == 0 && weightIndex == 0);
-                    boolean isFirstRowOfSlip = (weightIndex == 0);
-                    
-                    PurchaseBookRow row = new PurchaseBookRow(
-                        isFirstRowOfParty ? partyName : "", // Only show party name on first row
-                        isFirstRowOfSlip ? subSlip.getMainWeight() : 0, // Only show main weight on first row of slip
-                        subSlip.getSubWeights().get(weightIndex),
-                        subSlip.getCalculatedPrices().get(weightIndex),
-                        isFirstRowOfSlip ? dividedAmounts : new HashMap<>(), // Only show shortcut amounts on first row of slip
-                        isFirstRowOfSlip ? subSlip.getTotalBeforeGst() : 0,
-                        isFirstRowOfSlip ? subSlip.getGst() : 0,
-                        isFirstRowOfSlip ? calculateFinalAmount(subSlip, dividedAmounts) : 0,
-                        isFirstRowOfParty,
-                        isFirstRowOfSlip,
-                        subSlip.getSubWeights().size()
-                    );
-                    tableData.add(row);
-                }
-            }
-        }
-        
-        table.setItems(tableData);
-    }
-    
-    private Map<String, Double> calculateDividedAmounts(MainSlip mainSlip, int subSlipCount) {
-        Map<String, Double> dividedAmounts = new HashMap<>();
-        
-        if (mainSlip == null || mainSlip.getOperations() == null || subSlipCount == 0) {
-            return dividedAmounts;
+        if (mainSlip == null || mainSlip.getOperations() == null) {
+            return amounts;
         }
         
         // Divide each operation amount by number of sub slips
         for (MainSlip.Operation operation : mainSlip.getOperations()) {
             String alphabet = operation.getShortcutId();
             double totalAmount = operation.getAmount();
-            double dividedAmount = totalAmount / subSlipCount;
-            
-            dividedAmounts.put(alphabet, dividedAmount);
+            amounts.put(alphabet, totalAmount);
         }
         
-        return dividedAmounts;
+        return amounts;
     }
     
-    private double calculateFinalAmount(SubSlip subSlip, Map<String, Double> dividedAmounts) {
-        double finalAmount = subSlip.getTotalBeforeGst() + subSlip.getGst();
-        
-        // Get shortcuts that should be shown in purchase book
-        List<Shortcut> shortcuts = StorageManager.loadShortcuts().stream()
-                .filter(Shortcut::isShowInPurchaseBook)
-                .collect(Collectors.toList());
-        
-        for (Shortcut shortcut : shortcuts) {
-            Double amount = dividedAmounts.get(shortcut.getAlphabet());
-            if (amount != null) {
-                if ("+".equals(shortcut.getOperation())) {
-                    finalAmount += amount;
-                } else if ("-".equals(shortcut.getOperation())) {
-                    finalAmount -= amount;
-                }
-            }
-        }
-        
-        return finalAmount;
-    }
 
     private void printPurchaseBook() {
         try {
@@ -567,6 +530,11 @@ public class PurchaseBookTableView {
     }
 
     private PDDocument createPurchaseBookPDF() throws Exception {
+        double grandTotalMainWeight = 0;
+        double grandTotalAmount = 0;
+        double grandTotalGst = 0;
+        Map<String, Double> grandOperationTotals = new HashMap<>();
+
         PDDocument doc = new PDDocument();
         PDType1Font font = PDType1Font.HELVETICA;
         
@@ -616,10 +584,18 @@ public class PurchaseBookTableView {
             String partyName = StorageManager.getPartyNameById(partyId);
             
             MainSlip mainSlip = StorageManager.getMainSlip(selectedDate, partyName);
-            Map<String, Double> dividedAmounts = calculateDividedAmounts(mainSlip, subSlips.size());
+            Map<String, Double> operationAmounts = calculateOperationAmounts(mainSlip);
+            for (Map.Entry<String, Double> op : operationAmounts.entrySet()) {
+                grandOperationTotals.merge(op.getKey(), op.getValue(), Double::sum);
+            }
             
             for (SubSlip subSlip : subSlips) {
+                grandTotalMainWeight += subSlip.getMainWeight();
+                grandTotalAmount += subSlip.getTotalBeforeGst();
+                grandTotalGst += subSlip.getGst();
+
                 // Check if we need a new page for this sub-slip
+                boolean isFirstSubSlipOfParty = (subSlip == subSlips.get(0));
                 float neededHeight = subSlip.getSubWeights().size() * 16f + 20f; // Reduced row height
                 if (currentY < neededHeight + 40f) {
                     cs.close();
@@ -636,17 +612,16 @@ public class PurchaseBookTableView {
                 // Add sub-slip rows
                 for (int i = 0; i < subSlip.getSubWeights().size(); i++) {
                     boolean isFirstRowOfSlip = (i == 0);
-                    boolean isCenterRow = (i == subSlip.getSubWeights().size() / 2);
                     
                     currentY = addPurchaseBookDataRow(cs, font, margin, currentY, columnWidths,
                         isFirstRowOfSlip ? partyName : "",
                         isFirstRowOfSlip ? subSlip.getMainWeight() : 0,
                         subSlip.getSubWeights().get(i),
                         subSlip.getCalculatedPrices().get(i),
-                        isCenterRow ? subSlip.getTotalBeforeGst() : 0,
-                        isCenterRow ? subSlip.getGst() : 0,
-                        isCenterRow ? subSlip.getTruckNumber() : "",
-                        isCenterRow ? dividedAmounts : new HashMap<>(),
+                        isFirstRowOfSlip ? subSlip.getTotalBeforeGst() : 0,
+                        isFirstRowOfSlip ? subSlip.getGst() : 0,
+                        isFirstRowOfSlip ? subSlip.getTruckNumber() : "",
+                        (isFirstRowOfSlip && isFirstSubSlipOfParty) ? operationAmounts : new HashMap<>(),
                         purchaseBookShortcuts);
                 }
                 
@@ -655,7 +630,36 @@ public class PurchaseBookTableView {
             
             currentY -= 5f; // Reduced space between parties
         }
-        
+
+        // Space before total
+        currentY -= 10f;
+
+        // New page if needed
+        if (currentY < 40f) {
+            cs.close();
+            currentPage = new PDPage(PDRectangle.A4);
+            doc.addPage(currentPage);
+            cs = new PDPageContentStream(doc, currentPage);
+            currentY = PDRectangle.A4.getHeight() - 40f;
+
+            currentY = addPurchaseBookHeaders(cs, font, margin, currentY, columnWidths, purchaseBookShortcuts);
+            currentY -= 10f;
+        }
+
+        // Draw TOTAL row
+        currentY = addPurchaseBookDataRow(
+            cs, font, margin, currentY, columnWidths,
+            "TOTAL",
+            grandTotalMainWeight,
+            0,
+            0,
+            grandTotalAmount,
+            grandTotalGst,
+            "",
+            grandOperationTotals,
+            purchaseBookShortcuts
+        );
+
         cs.close();
         return doc;
     }
@@ -668,10 +672,10 @@ public class PurchaseBookTableView {
         int index = 0;
         
         // Party Name - 25% of width
-        proportions[index++] = 0.20f;
+        proportions[index++] = 0.18f;
         
         // Main Wt - 10% of width
-        proportions[index++] = 0.10f;
+        proportions[index++] = 0.09f;
         
         // Sub Wt - 25% of width (most space for complex data)
         proportions[index++] = 0.20f;
@@ -683,13 +687,13 @@ public class PurchaseBookTableView {
         }
         
         // Amount - 8% of width
-        proportions[index++] = 0.09f;
+        proportions[index++] = 0.14f;
         
         // GST - 6% of width
-        proportions[index++] = 0.06f;
+        proportions[index++] = 0.13f;
         
         // Truck No - 11%   of width
-        proportions[index++] = 0.13f;
+        proportions[index++] = 0.08f;
         
         return proportions;
     }
@@ -838,7 +842,7 @@ public class PurchaseBookTableView {
             String shortcutText = (amount != null && amount > 0) ? String.format("%.0f", amount) : "";
             float shortcutTextWidth = font.getStringWidth(shortcutText) / 1000f * 8f;
             cs.beginText();
-            cs.newLineAtOffset(x + (columnWidths[columnIndex] - shortcutTextWidth) / 2f, y);
+            cs.newLineAtOffset(x + (columnWidths[columnIndex] - shortcutTextWidth) / 2f, y + textYOffset);
             cs.showText(shortcutText);
             cs.endText();
             x += columnWidths[columnIndex++];
@@ -848,7 +852,7 @@ public class PurchaseBookTableView {
         String totalText = totalBeforeGst > 0 ? String.format("%.0f", totalBeforeGst) : "";
         float totalTextWidth = font.getStringWidth(totalText) / 1000f * 8f;
         cs.beginText();
-        cs.newLineAtOffset(x + (columnWidths[columnIndex] - totalTextWidth) / 2f, y);
+        cs.newLineAtOffset(x + (columnWidths[columnIndex] - totalTextWidth) / 2f, y + textYOffset);
         cs.showText(totalText);
         cs.endText();
         x += columnWidths[columnIndex++];
@@ -857,7 +861,7 @@ public class PurchaseBookTableView {
         String gstText = (gst >= 0 && (totalBeforeGst > 0 || gst > 0)) ? String.format("%.0f", gst) : "";
         float gstTextWidth = font.getStringWidth(gstText) / 1000f * 8f;
         cs.beginText();
-        cs.newLineAtOffset(x + (columnWidths[columnIndex] - gstTextWidth) / 2f, y);
+        cs.newLineAtOffset(x + (columnWidths[columnIndex] - gstTextWidth) / 2f, y + textYOffset);
         cs.showText(gstText);
         cs.endText();
         x += columnWidths[columnIndex++];
@@ -866,7 +870,7 @@ public class PurchaseBookTableView {
         String finalText = truckNumber != null ? truckNumber : "";
         float finalTextWidth = font.getStringWidth(finalText) / 1000f * 8f;
         cs.beginText();
-        cs.newLineAtOffset(x + (columnWidths[columnIndex] - finalTextWidth) / 2f, y);
+        cs.newLineAtOffset(x + (columnWidths[columnIndex] - finalTextWidth) / 2f, y + textYOffset);
         cs.showText(finalText);
         cs.endText();
         
