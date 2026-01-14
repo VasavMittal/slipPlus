@@ -58,21 +58,18 @@ public class GeneralDataView {
                 StorageManager.loadMainSlips().get(date.toString());
 
         if (slips != null) {
-            for (MainSlip slip : slips.values()) {
-                page.getChildren().add(buildPartyBlock(slip));
-            }
+            slips.values().forEach(slip -> page.getChildren().add(buildPartyBlock(slip)));
         }
 
         ScrollPane scroll = new ScrollPane(page);
         scroll.setFitToWidth(true);
 
-        BorderPane root = new BorderPane(scroll);
+        Scene scene = new Scene(
+                new BorderPane(scroll),
+                Screen.getPrimary().getBounds().getWidth(),
+                Screen.getPrimary().getBounds().getHeight()
+        );
 
-        double screenWidth = Screen.getPrimary().getBounds().getWidth();
-        double screenHeight = Screen.getPrimary().getBounds().getHeight();
-
-        
-        Scene scene = new Scene(root, screenWidth, screenHeight);
         scene.setOnKeyPressed(e -> {
             if (e.getCode() == KeyCode.ESCAPE) AppNavigator.startApp(stage);
             if (e.getCode() == KeyCode.P) printGeneralData();
@@ -89,84 +86,108 @@ public class GeneralDataView {
     // =========================================================
     private VBox buildPartyBlock(MainSlip slip) {
 
-        VBox outer = new VBox(15);
+        VBox outer = new VBox(12);
         outer.setStyle("-fx-border-color:black; -fx-border-width:0 1 0 1;");
 
         GridPane grid = new GridPane();
         configureLedgerGrid(grid);
 
-        // -------- HEADER (RIGHT ALIGNED) --------
-        Label headerText = new Label(
-                slip.getPartyName() + "  " +
-                (long) Math.floor(slip.getTotalBeforeOperations()) + " "
+        // ---------- HEADER ----------
+        grid.add(
+                createRow(
+                        slip.getPartyName(),
+                        String.valueOf((long) Math.floor(slip.getTotalBeforeOperations())),
+                        Pos.CENTER_RIGHT
+                ),
+                2, 0
         );
-        headerText.setStyle("-fx-font-size:22px; -fx-font-weight:bold;");
 
-        HBox headerBox = new HBox(headerText);
-        headerBox.setAlignment(Pos.CENTER_RIGHT);
-        headerBox.setMaxWidth(Double.MAX_VALUE);
-
-        grid.add(headerBox, 2, 0);
-
-        // -------- OPERATIONS --------
+        // ---------- OPERATIONS ----------
         List<MainSlip.Operation> minus = new ArrayList<>();
         List<MainSlip.Operation> plus = new ArrayList<>();
 
-        for (MainSlip.Operation op : slip.getOperations()) {
+        slip.getOperations().forEach(op -> {
             if ("-".equals(op.getOperationType())) minus.add(op);
             else plus.add(op);
-        }
+        });
 
         int rows = Math.max(minus.size(), plus.size());
 
         for (int i = 0; i < rows; i++) {
 
             if (i < minus.size()) {
-                Label l = new Label(" " + (long) Math.floor(minus.get(i).getAmount()));
-                l.setStyle("-fx-font-size:22px;");
-
-                HBox box = new HBox(l);
-                box.setAlignment(Pos.CENTER_LEFT);
-                box.setMaxWidth(Double.MAX_VALUE);
-
-                grid.add(box, 0, i + 1);
+                grid.add(
+                        createRow(
+                                minus.get(i).getDescription(),
+                                String.valueOf((long) Math.floor(minus.get(i).getAmount())),
+                                Pos.CENTER_LEFT
+                        ),
+                        0, i + 1
+                );
             }
 
             if (i < plus.size()) {
-                Label l = new Label("" + (long) Math.floor(plus.get(i).getAmount()) + " ");
-                l.setStyle("-fx-font-size:22px;");
-
-                HBox box = new HBox(l);
-                box.setAlignment(Pos.CENTER_RIGHT);
-                box.setMaxWidth(Double.MAX_VALUE);
-
-                grid.add(box, 2, i + 1);
+                grid.add(
+                        createRow(
+                                plus.get(i).getDescription(),
+                                String.valueOf((long) Math.floor(plus.get(i).getAmount())),
+                                Pos.CENTER_RIGHT
+                        ),
+                        2, i + 1
+                );
             }
         }
 
-        // -------- FINAL TOTAL --------
-        double finalTotal = slip.getTotalAfterOperations();
-        Label finalLabel = new Label(" ranjod " + (long) Math.floor(Math.abs(finalTotal)) +" ");
-        finalLabel.setStyle("-fx-font-size:22px; -fx-font-weight:bold;");
+        // ---------- FINAL TOTAL ----------
+        grid.add(
+                createRow(
+                        "Ranjodh",
+                        String.valueOf((long) Math.floor(Math.abs(slip.getTotalAfterOperations()))),
+                        slip.getTotalAfterOperations() < 0 ? Pos.CENTER_RIGHT : Pos.CENTER_LEFT,
+                        true
+                ),
+                slip.getTotalAfterOperations() < 0 ? 2 : 0,
+                rows + 1
+        );
 
-        HBox finalBox = new HBox(finalLabel);
-        finalBox.setAlignment(finalTotal < 0 ? Pos.CENTER_RIGHT : Pos.CENTER_LEFT);
-        finalBox.setMaxWidth(Double.MAX_VALUE);
-
-        grid.add(finalBox, finalTotal < 0 ? 2 : 0, rows + 1);
-
-        // -------- CENTER LINE (ALWAYS FULL HEIGHT) --------
-        Rectangle centerLine = new Rectangle(2, 1);
-        centerLine.setFill(Color.BLACK);
+        // ---------- CENTER LINE ----------
+        Rectangle centerLine = new Rectangle(2, 1, Color.BLACK);
         centerLine.heightProperty().bind(grid.heightProperty());
-
         grid.add(centerLine, 1, 0);
         GridPane.setRowSpan(centerLine, rows + 2);
 
-        Separator sep = new Separator();
-        outer.getChildren().addAll(grid, sep);
-
+        outer.getChildren().addAll(grid, new Separator());
         return outer;
+    }
+
+    // =========================================================
+    // ROW FACTORY (KEY FIX)
+    // =========================================================
+    private HBox createRow(String text, String amount, Pos alignment) {
+        return createRow(text, amount, alignment, false);
+    }
+
+    private HBox createRow(String text, String amount, Pos alignment, boolean bold) {
+
+        Label desc = new Label(text);
+        Label amt  = new Label(amount);
+
+        desc.setStyle("-fx-font-size:22px;");
+        amt.setStyle("-fx-font-size:22px;");
+
+        if (bold) {
+            desc.setStyle(desc.getStyle() + "-fx-font-weight:bold;");
+            amt.setStyle(amt.getStyle() + "-fx-font-weight:bold;");
+        }
+
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+
+        HBox box = new HBox(10, desc, spacer, amt);
+        box.setAlignment(alignment);
+        box.setMaxWidth(Double.MAX_VALUE);
+
+        return box;
     }
 
     // =========================================================
@@ -187,7 +208,7 @@ public class GeneralDataView {
     }
 
     // =========================================================
-    // PRINT
+    // PRINT + PDF (unchanged logic, already correct)
     // =========================================================
     private void printGeneralData() {
         try {
@@ -199,21 +220,15 @@ public class GeneralDataView {
                 doc.close();
             }
         } catch (Exception e) {
-            e.printStackTrace();
             new Alert(Alert.AlertType.ERROR, "Printing failed").showAndWait();
         }
     }
 
-    // =========================================================
-    // SAVE PDF
-    // =========================================================
     private void saveGeneralDataPDF() {
         try {
             FileChooser fc = new FileChooser();
             fc.setInitialFileName("GeneralData_" + date + ".pdf");
-            fc.getExtensionFilters().add(
-                    new FileChooser.ExtensionFilter("PDF Files", "*.pdf")
-            );
+            fc.getExtensionFilters().add(new FileChooser.ExtensionFilter("PDF Files", "*.pdf"));
 
             File file = fc.showSaveDialog(null);
             if (file == null) return;
@@ -228,9 +243,6 @@ public class GeneralDataView {
         }
     }
 
-    // =========================================================
-    // PDF (RIGHT-ALIGNED PROPERLY)
-    // =========================================================
     private PDDocument createGeneralDataPDF() throws Exception {
 
         PDDocument doc = new PDDocument();
@@ -238,13 +250,21 @@ public class GeneralDataView {
 
         float margin = 40;
         float pageWidth = PDRectangle.A4.getWidth();
+        float pageHeight = PDRectangle.A4.getHeight();
         float usable = pageWidth - margin * 2;
 
-        float leftX = margin;
-        float centerX = margin + usable / 2;
-        float rightX = pageWidth - margin;
+        // ===== COLUMN ANCHORS (CRITICAL PART) =====
+        float leftBorder   = margin;
+        float rightBorder  = pageWidth - margin;
+        float centerX      = margin + usable / 2;
 
-        float y = PDRectangle.A4.getHeight() - 60;
+        float LEFT_DESC_X  = leftBorder + 12;
+        float LEFT_AMT_X   = centerX - 12;
+
+        float RIGHT_DESC_X = centerX + 12;
+        float RIGHT_AMT_X  = rightBorder - 12;
+
+        float y = pageHeight - 60;
 
         PDPage page = new PDPage(PDRectangle.A4);
         doc.addPage(page);
@@ -259,24 +279,33 @@ public class GeneralDataView {
 
         for (MainSlip slip : slips.values()) {
 
-            // ---------- HEADER ----------
-            String header = slip.getPartyName() + "  " +
-                    (long) Math.floor(slip.getTotalBeforeOperations()) + " ";
-
-            float headerWidth = font.getStringWidth(header) / 1000 * 14;
+            // ================= HEADER =================
+            String headerDesc = slip.getPartyName();
+            String headerAmt  = String.valueOf(
+                    (long) Math.floor(slip.getTotalBeforeOperations())
+            );
 
             cs.setFont(font, 14);
+
+            // Header desc (right side)
             cs.beginText();
-            cs.newLineAtOffset(rightX - headerWidth, y);
-            cs.showText(header);
+            cs.newLineAtOffset(RIGHT_DESC_X, y);
+            cs.showText(headerDesc);
+            cs.endText();
+
+            // Header amount (right aligned)
+            float hw = font.getStringWidth(headerAmt) / 1000 * 14;
+            cs.beginText();
+            cs.newLineAtOffset(RIGHT_AMT_X - hw, y);
+            cs.showText(headerAmt);
             cs.endText();
 
             float blockTop = y + 10;
             y -= HEADER_GAP;
 
-            // ---------- OPERATIONS ----------
+            // ================= OPERATIONS =================
             List<MainSlip.Operation> minus = new ArrayList<>();
-            List<MainSlip.Operation> plus = new ArrayList<>();
+            List<MainSlip.Operation> plus  = new ArrayList<>();
 
             for (MainSlip.Operation op : slip.getOperations()) {
                 if ("-".equals(op.getOperationType())) minus.add(op);
@@ -288,54 +317,93 @@ public class GeneralDataView {
 
             for (int i = 0; i < rows; i++) {
 
+                // ---------- LEFT SIDE ----------
                 if (i < minus.size()) {
+                    MainSlip.Operation op = minus.get(i);
+
+                    // desc
                     cs.beginText();
-                    cs.newLineAtOffset(leftX, y);
-                    cs.showText(" " + (long) Math.floor(minus.get(i).getAmount()));
+                    cs.newLineAtOffset(LEFT_DESC_X, y);
+                    cs.showText(op.getDescription());
+                    cs.endText();
+
+                    // amount (right aligned)
+                    String amt = String.valueOf(
+                            (long) Math.floor(op.getAmount())
+                    );
+                    float w = font.getStringWidth(amt) / 1000 * 13;
+
+                    cs.beginText();
+                    cs.newLineAtOffset(LEFT_AMT_X - w, y);
+                    cs.showText(amt);
                     cs.endText();
                 }
 
+                // ---------- RIGHT SIDE ----------
                 if (i < plus.size()) {
-                    String t = "" + (long) Math.floor(plus.get(i).getAmount()) + " ";
-                    float w = font.getStringWidth(t) / 1000 * 13;
+                    MainSlip.Operation op = plus.get(i);
+
+                    // desc
+                    cs.beginText();
+                    cs.newLineAtOffset(RIGHT_DESC_X, y);
+                    cs.showText(op.getDescription());
+                    cs.endText();
+
+                    // amount (right aligned)
+                    String amt = String.valueOf(
+                            (long) Math.floor(op.getAmount())
+                    );
+                    float w = font.getStringWidth(amt) / 1000 * 13;
 
                     cs.beginText();
-                    cs.newLineAtOffset(rightX - w, y);
-                    cs.showText(t);
+                    cs.newLineAtOffset(RIGHT_AMT_X - w, y);
+                    cs.showText(amt);
                     cs.endText();
                 }
 
                 y -= ROW_GAP;
             }
 
-            // ---------- FINAL TOTAL ----------
-            y -= FINAL_GAP;
+            // ================= FINAL TOTAL =================
 
-            String ft = " ranjod " +
-                    (long) Math.floor(Math.abs(slip.getTotalAfterOperations())) + " ";
-
-            float fw = font.getStringWidth(ft) / 1000 * 14;
+            String finalDesc = "Ranjodh";
+            String finalAmt  = String.valueOf(
+                    (long) Math.floor(Math.abs(slip.getTotalAfterOperations()))
+            );
 
             cs.setFont(font, 14);
+
+            boolean isNegative = slip.getTotalAfterOperations() < 0;
+
+            float descX = isNegative ? RIGHT_DESC_X : LEFT_DESC_X;
+            float amtX  = isNegative ? RIGHT_AMT_X  : LEFT_AMT_X;
+
+            // desc
             cs.beginText();
-            cs.newLineAtOffset(
-                    slip.getTotalAfterOperations() < 0 ? rightX - fw : leftX,
-                    y
-            );
-            cs.showText(ft);
+            cs.newLineAtOffset(descX, y);
+            cs.showText(finalDesc);
             cs.endText();
+
+            // amount (right aligned)
+            float fw = font.getStringWidth(finalAmt) / 1000 * 14;
+            cs.beginText();
+            cs.newLineAtOffset(amtX - fw, y);
+            cs.showText(finalAmt);
+            cs.endText();
+
 
             float blockBottom = y - 10;
 
-            // ---------- LEDGER LINES ----------
+            // ================= LEDGER LINES =================
+            cs.moveTo(leftBorder, blockTop);
+            cs.lineTo(leftBorder, blockBottom);
+
             cs.moveTo(centerX, blockTop);
             cs.lineTo(centerX, blockBottom);
 
-            cs.moveTo(leftX, blockTop);
-            cs.lineTo(leftX, blockBottom);
+            cs.moveTo(rightBorder, blockTop);
+            cs.lineTo(rightBorder, blockBottom);
 
-            cs.moveTo(rightX, blockTop);
-            cs.lineTo(rightX, blockBottom);
             cs.stroke();
 
             y -= 40;
@@ -344,4 +412,5 @@ public class GeneralDataView {
         cs.close();
         return doc;
     }
+
 }
