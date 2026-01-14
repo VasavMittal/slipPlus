@@ -97,7 +97,7 @@ task createExeWithJmods(type: Exec) {
             "--main-class", mainClass,
             "--runtime-image", "runtime-jmods",
             "--icon", "src/main/resources/logos/logo.ico",
-            "--app-version", "1.0.5",  // Increment version for updates
+            "--app-version", "1.0.6",  // Increment version for updates
             "--vendor", "SlipPlus",
             "--description", "SlipPlus Application",
             "--win-dir-chooser",
