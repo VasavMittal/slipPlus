@@ -41,7 +41,7 @@ public class MenuScreen {
         StackPane root = new StackPane();
         root.setStyle("-fx-background-color: " + toHex(Colors.BACKGROUND) + ";");
 
-        String[] labels = {"New", "Sub Slip", "Main Slip", "Purchase Book"};
+        String[] labels = {"New", "Sub Slip", "Main Slip", "Purchase Book", "General Data"};
         buttons = new Button[labels.length];
 
         HBox container = new HBox(AutoScaleManager.scaleWidth(40));
@@ -207,6 +207,8 @@ public class MenuScreen {
             case 1 -> AppNavigator.openSubSlipViewer(stage);
             case 2 -> AppNavigator.openMainSlip(stage);
             case 3 -> AppNavigator.openPurchaseBook(stage);
+            case 4 -> AppNavigator.openGeneralData(stage);
+
         }
     }
 }

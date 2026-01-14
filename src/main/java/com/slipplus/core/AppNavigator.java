@@ -25,4 +25,8 @@ public class AppNavigator {
     public static void openSubSlipViewer(Stage stage) {
         new com.slipplus.screens.subSlipViewer.SubSlipViewerScreen().start(stage);
     }
+    public static void openGeneralData(Stage stage) {
+        new com.slipplus.screens.generalData.GeneralDataScreen().start(stage);
+    }
+
 }
