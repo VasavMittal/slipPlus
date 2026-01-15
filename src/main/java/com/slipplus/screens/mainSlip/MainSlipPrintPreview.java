@@ -781,7 +781,7 @@ public class MainSlipPrintPreview {
 
                 cs.beginText();
                 cs.newLineAtOffset(colOpSignX, y);
-                cs.showText("(-)");
+                cs.showText("(" + op.getOperationType() + ")");
                 cs.endText();
 
                 y -= 16f;

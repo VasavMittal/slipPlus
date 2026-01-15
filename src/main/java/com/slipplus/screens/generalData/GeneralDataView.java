@@ -96,7 +96,7 @@ public class GeneralDataView {
         grid.add(
                 createRow(
                         slip.getPartyName(),
-                        String.valueOf((long) Math.floor(slip.getTotalBeforeOperations())),
+                        String.format("%.0f", slip.getTotalBeforeOperations()),
                         Pos.CENTER_RIGHT
                 ),
                 2, 0
@@ -119,7 +119,7 @@ public class GeneralDataView {
                 grid.add(
                         createRow(
                                 minus.get(i).getDescription(),
-                                String.valueOf((long) Math.floor(minus.get(i).getAmount())),
+                                String.format("%.0f", minus.get(i).getAmount()),
                                 Pos.CENTER_LEFT
                         ),
                         0, i + 1
@@ -130,7 +130,7 @@ public class GeneralDataView {
                 grid.add(
                         createRow(
                                 plus.get(i).getDescription(),
-                                String.valueOf((long) Math.floor(plus.get(i).getAmount())),
+                                String.format("%.0f", plus.get(i).getAmount()),
                                 Pos.CENTER_RIGHT
                         ),
                         2, i + 1
@@ -142,7 +142,7 @@ public class GeneralDataView {
         grid.add(
                 createRow(
                         "Ranjodh",
-                        String.valueOf((long) Math.floor(Math.abs(slip.getTotalAfterOperations()))),
+                        String.format("%.0f", Math.abs(slip.getTotalAfterOperations())),
                         slip.getTotalAfterOperations() < 0 ? Pos.CENTER_RIGHT : Pos.CENTER_LEFT,
                         true
                 ),
@@ -281,9 +281,7 @@ public class GeneralDataView {
 
             // ================= HEADER =================
             String headerDesc = slip.getPartyName();
-            String headerAmt  = String.valueOf(
-                    (long) Math.floor(slip.getTotalBeforeOperations())
-            );
+            String headerAmt  = String.format("%.0f", slip.getTotalBeforeOperations());
 
             cs.setFont(font, 14);
 
@@ -328,9 +326,8 @@ public class GeneralDataView {
                     cs.endText();
 
                     // amount (right aligned)
-                    String amt = String.valueOf(
-                            (long) Math.floor(op.getAmount())
-                    );
+                    String amt = String.format("%.0f", op.getAmount());
+                            
                     float w = font.getStringWidth(amt) / 1000 * 13;
 
                     cs.beginText();
@@ -350,9 +347,7 @@ public class GeneralDataView {
                     cs.endText();
 
                     // amount (right aligned)
-                    String amt = String.valueOf(
-                            (long) Math.floor(op.getAmount())
-                    );
+                    String amt = String.format("%.0f", op.getAmount());
                     float w = font.getStringWidth(amt) / 1000 * 13;
 
                     cs.beginText();
@@ -367,9 +362,7 @@ public class GeneralDataView {
             // ================= FINAL TOTAL =================
 
             String finalDesc = "Ranjodh";
-            String finalAmt  = String.valueOf(
-                    (long) Math.floor(Math.abs(slip.getTotalAfterOperations()))
-            );
+            String finalAmt  = String.format("%.0f", Math.abs(slip.getTotalAfterOperations()));
 
             cs.setFont(font, 14);
 
