@@ -41,7 +41,7 @@ public class MenuScreen {
         StackPane root = new StackPane();
         root.setStyle("-fx-background-color: " + toHex(Colors.BACKGROUND) + ";");
 
-        String[] labels = {"New", "Sub Slip", "Main Slip", "Purchase Book", "General Data"};
+        String[] labels = {"New", "Sub Slip", "Main Slip", "Purchase Book", "Journal Data"};
         buttons = new Button[labels.length];
 
         HBox container = new HBox(AutoScaleManager.scaleWidth(40));

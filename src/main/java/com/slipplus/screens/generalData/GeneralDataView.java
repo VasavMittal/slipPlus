@@ -248,36 +248,54 @@ public class GeneralDataView {
         PDDocument doc = new PDDocument();
         PDType1Font font = PDType1Font.HELVETICA;
 
-        float margin = 40;
-        float pageWidth = PDRectangle.A4.getWidth();
-        float pageHeight = PDRectangle.A4.getHeight();
-        float usable = pageWidth - margin * 2;
+        // ================= PAGE CONSTANTS =================
+        final float PAGE_WIDTH  = PDRectangle.A4.getWidth();
+        final float PAGE_HEIGHT = PDRectangle.A4.getHeight();
 
-        // ===== COLUMN ANCHORS (CRITICAL PART) =====
-        float leftBorder   = margin;
-        float rightBorder  = pageWidth - margin;
-        float centerX      = margin + usable / 2;
+        final float TOP_MARGIN    = 60;
+        final float BOTTOM_MARGIN = 60;
+        final float LEFT_MARGIN   = 40;
+        final float RIGHT_MARGIN  = 40;
 
-        float LEFT_DESC_X  = leftBorder + 12;
-        float LEFT_AMT_X   = centerX - 12;
+        final float USABLE_WIDTH = PAGE_WIDTH - LEFT_MARGIN - RIGHT_MARGIN;
 
-        float RIGHT_DESC_X = centerX + 12;
-        float RIGHT_AMT_X  = rightBorder - 12;
+        // ================= COLUMN ANCHORS =================
+        final float LEFT_BORDER  = LEFT_MARGIN;
+        final float RIGHT_BORDER = PAGE_WIDTH - RIGHT_MARGIN;
+        final float CENTER_X     = LEFT_MARGIN + USABLE_WIDTH / 2;
 
-        float y = pageHeight - 60;
+        final float LEFT_DESC_X  = LEFT_BORDER + 12;
+        final float LEFT_AMT_X   = CENTER_X - 12;
 
+        final float RIGHT_DESC_X = CENTER_X + 12;
+        final float RIGHT_AMT_X  = RIGHT_BORDER - 12;
+
+        // ================= VERTICAL SPACING =================
+        final float HEADER_GAP = 34;
+        final float ROW_GAP    = 26;
+        final float FINAL_GAP  = 26;
+        final float BLOCK_GAP  = 40;
+
+        // ================= CREATE FIRST PAGE =================
         PDPage page = new PDPage(PDRectangle.A4);
         doc.addPage(page);
         PDPageContentStream cs = new PDPageContentStream(doc, page);
 
+        float y = PAGE_HEIGHT - TOP_MARGIN;
+
         Map<String, MainSlip> slips =
                 StorageManager.loadMainSlips().get(date.toString());
 
-        final float HEADER_GAP = 34;
-        final float ROW_GAP    = 26;
-        final float FINAL_GAP  = 30;
-
         for (MainSlip slip : slips.values()) {
+
+            // ================= PAGE BREAK =================
+            if (y < BOTTOM_MARGIN + 140) {
+                cs.close();
+                page = new PDPage(PDRectangle.A4);
+                doc.addPage(page);
+                cs = new PDPageContentStream(doc, page);
+                y = PAGE_HEIGHT - TOP_MARGIN;
+            }
 
             // ================= HEADER =================
             String headerDesc = slip.getPartyName();
@@ -285,13 +303,11 @@ public class GeneralDataView {
 
             cs.setFont(font, 14);
 
-            // Header desc (right side)
             cs.beginText();
             cs.newLineAtOffset(RIGHT_DESC_X, y);
             cs.showText(headerDesc);
             cs.endText();
 
-            // Header amount (right aligned)
             float hw = font.getStringWidth(headerAmt) / 1000 * 14;
             cs.beginText();
             cs.newLineAtOffset(RIGHT_AMT_X - hw, y);
@@ -319,15 +335,12 @@ public class GeneralDataView {
                 if (i < minus.size()) {
                     MainSlip.Operation op = minus.get(i);
 
-                    // desc
                     cs.beginText();
                     cs.newLineAtOffset(LEFT_DESC_X, y);
                     cs.showText(op.getDescription());
                     cs.endText();
 
-                    // amount (right aligned)
                     String amt = String.format("%.0f", op.getAmount());
-                            
                     float w = font.getStringWidth(amt) / 1000 * 13;
 
                     cs.beginText();
@@ -340,13 +353,11 @@ public class GeneralDataView {
                 if (i < plus.size()) {
                     MainSlip.Operation op = plus.get(i);
 
-                    // desc
                     cs.beginText();
                     cs.newLineAtOffset(RIGHT_DESC_X, y);
                     cs.showText(op.getDescription());
                     cs.endText();
 
-                    // amount (right aligned)
                     String amt = String.format("%.0f", op.getAmount());
                     float w = font.getStringWidth(amt) / 1000 * 13;
 
@@ -362,48 +373,47 @@ public class GeneralDataView {
             // ================= FINAL TOTAL =================
 
             String finalDesc = "Ranjodh";
-            String finalAmt  = String.format("%.0f", Math.abs(slip.getTotalAfterOperations()));
-
-            cs.setFont(font, 14);
+            String finalAmt  = String.format("%.0f",
+                    Math.abs(slip.getTotalAfterOperations()));
 
             boolean isNegative = slip.getTotalAfterOperations() < 0;
 
             float descX = isNegative ? RIGHT_DESC_X : LEFT_DESC_X;
             float amtX  = isNegative ? RIGHT_AMT_X  : LEFT_AMT_X;
 
-            // desc
+            cs.setFont(font, 14);
+
             cs.beginText();
             cs.newLineAtOffset(descX, y);
             cs.showText(finalDesc);
             cs.endText();
 
-            // amount (right aligned)
             float fw = font.getStringWidth(finalAmt) / 1000 * 14;
             cs.beginText();
             cs.newLineAtOffset(amtX - fw, y);
             cs.showText(finalAmt);
             cs.endText();
 
-
             float blockBottom = y - 10;
 
             // ================= LEDGER LINES =================
-            cs.moveTo(leftBorder, blockTop);
-            cs.lineTo(leftBorder, blockBottom);
+            cs.moveTo(LEFT_BORDER, blockTop);
+            cs.lineTo(LEFT_BORDER, blockBottom);
 
-            cs.moveTo(centerX, blockTop);
-            cs.lineTo(centerX, blockBottom);
+            cs.moveTo(CENTER_X, blockTop);
+            cs.lineTo(CENTER_X, blockBottom);
 
-            cs.moveTo(rightBorder, blockTop);
-            cs.lineTo(rightBorder, blockBottom);
+            cs.moveTo(RIGHT_BORDER, blockTop);
+            cs.lineTo(RIGHT_BORDER, blockBottom);
 
             cs.stroke();
 
-            y -= 40;
+            y -= BLOCK_GAP;
         }
 
         cs.close();
         return doc;
     }
+
 
 }
